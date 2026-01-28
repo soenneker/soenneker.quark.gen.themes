@@ -12,7 +12,7 @@ public static class QuarkDemoTheme
         {
             Selector = "a",
             TextDecoration = TextDecoration.None,
-            TextColor = "#2563ec"
+            TextColor = "#2563ba"
         },
         Buttons = new ButtonOptions
         {

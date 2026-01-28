@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
@@ -11,6 +12,9 @@ namespace Soenneker.Quark.Gen.Themes
     [Generator]
     public sealed class QuarkThemeCssGenerator : IIncrementalGenerator
     {
+        private const string SuiteAttributeName = "Soenneker.Quark.Suite.Attributes.GenerateQuarkThemeCssAttribute";
+        private const string GeneratorAttributeName = "Soenneker.Quark.Gen.Themes.GenerateQuarkThemeCssAttribute";
+
         private static readonly DiagnosticDescriptor MissingOutputPath = new(
             "QTG001",
             "Missing output file path",
@@ -37,48 +41,46 @@ namespace Soenneker.Quark.Gen.Themes
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            var themeClasses = context.SyntaxProvider.ForAttributeWithMetadataName(
-                "Soenneker.Quark.Suite.Attributes.GenerateQuarkThemeCssAttribute",
+            var suiteThemeClasses = context.SyntaxProvider.ForAttributeWithMetadataName(
+                SuiteAttributeName,
                 static (node, _) => node is ClassDeclarationSyntax,
-                static (ctx, _) =>
-                {
-                    var classSymbol = (INamedTypeSymbol)ctx.TargetSymbol;
-                    var attribute = ctx.Attributes.First();
-                    return new Candidate(classSymbol, attribute);
-                });
+                static (ctx, _) => new Candidate((INamedTypeSymbol)ctx.TargetSymbol, ctx.Attributes.First()));
 
-            var combined = context.CompilationProvider.Combine(themeClasses.Collect());
+            var generatorThemeClasses = context.SyntaxProvider.ForAttributeWithMetadataName(
+                GeneratorAttributeName,
+                static (node, _) => node is ClassDeclarationSyntax,
+                static (ctx, _) => new Candidate((INamedTypeSymbol)ctx.TargetSymbol, ctx.Attributes.First()));
+
+            var combined = context.CompilationProvider
+                .Combine(suiteThemeClasses.Collect())
+                .Combine(generatorThemeClasses.Collect());
 
             context.RegisterSourceOutput(combined, static (spc, data) =>
             {
-                var compilation = data.Left;
-                var candidates = data.Right;
+                var compilation = data.Left.Left;
+                var suiteCandidates = data.Left.Right;
+                var generatorCandidates = data.Right;
 
-                if (candidates.IsDefaultOrEmpty)
+                if (suiteCandidates.IsDefaultOrEmpty && generatorCandidates.IsDefaultOrEmpty)
                     return;
 
                 var themeType = compilation.GetTypeByMetadataName("Soenneker.Quark.Theme");
-                if (themeType == null)
+                if (themeType is null)
                 {
                     spc.ReportDiagnostic(Diagnostic.Create(ThemeTypeMissing, Location.None));
                     return;
                 }
 
-                foreach (var candidate in candidates)
+                var entries = new List<(string ThemeTypeName, string OutputPath)>(capacity: suiteCandidates.Length + generatorCandidates.Length);
+
+                foreach (var candidate in MergeCandidates(suiteCandidates, generatorCandidates))
                 {
                     var classSymbol = candidate.ClassSymbol;
                     var attributeData = candidate.Attribute;
                     var classLocation = classSymbol.Locations.FirstOrDefault();
 
                     var outputFilePath = GetOutputFilePath(attributeData);
-                    if (outputFilePath == null)
-                    {
-                        spc.ReportDiagnostic(Diagnostic.Create(MissingOutputPath, classLocation, classSymbol.Name));
-                        continue;
-                    }
-
-                    var trimmedOutputFilePath = outputFilePath.Trim();
-                    if (trimmedOutputFilePath.Length == 0)
+                    if (outputFilePath is null || outputFilePath.Trim().Length == 0)
                     {
                         spc.ReportDiagnostic(Diagnostic.Create(MissingOutputPath, classLocation, classSymbol.Name));
                         continue;
@@ -90,14 +92,48 @@ namespace Soenneker.Quark.Gen.Themes
                         continue;
                     }
 
-                    EmitCssArtifact(spc, classSymbol, trimmedOutputFilePath);
+                    var fullName = GetFullyQualifiedName(classSymbol);
+                    entries.Add((fullName, outputFilePath.Trim()));
                 }
+
+                EmitManifest(spc, entries);
             });
+        }
+
+        private static IEnumerable<Candidate> MergeCandidates(
+            ImmutableArray<Candidate> suiteCandidates,
+            ImmutableArray<Candidate> generatorCandidates)
+        {
+            if (suiteCandidates.IsDefaultOrEmpty && generatorCandidates.IsDefaultOrEmpty)
+                return Array.Empty<Candidate>();
+
+            var seen = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+            var merged = new List<Candidate>(suiteCandidates.Length + generatorCandidates.Length);
+
+            AddCandidates(suiteCandidates, merged, seen);
+            AddCandidates(generatorCandidates, merged, seen);
+
+            return merged;
+        }
+
+        private static void AddCandidates(
+            ImmutableArray<Candidate> candidates,
+            List<Candidate> merged,
+            HashSet<INamedTypeSymbol> seen)
+        {
+            if (candidates.IsDefaultOrEmpty)
+                return;
+
+            foreach (var candidate in candidates)
+            {
+                if (seen.Add(candidate.ClassSymbol))
+                    merged.Add(candidate);
+            }
         }
 
         private static bool TryGetThemeFactoryMember(INamedTypeSymbol classSymbol, INamedTypeSymbol themeType)
         {
-            var matches = new List<ISymbol>();
+            var matches = 0;
 
             foreach (var member in classSymbol.GetMembers())
             {
@@ -107,7 +143,8 @@ namespace Soenneker.Quark.Gen.Themes
                     property.GetMethod != null &&
                     SymbolEqualityComparer.Default.Equals(property.Type, themeType))
                 {
-                    matches.Add(property);
+                    matches++;
+                    continue;
                 }
 
                 if (member is IMethodSymbol method &&
@@ -116,32 +153,50 @@ namespace Soenneker.Quark.Gen.Themes
                     method.Parameters.Length == 0 &&
                     SymbolEqualityComparer.Default.Equals(method.ReturnType, themeType))
                 {
-                    matches.Add(method);
+                    matches++;
                 }
             }
 
-            return matches.Count == 1;
+            return matches == 1;
         }
 
-        private static void EmitCssArtifact(SourceProductionContext context, INamedTypeSymbol classSymbol, string outputFilePath)
+        private static void EmitManifest(SourceProductionContext context, List<(string ThemeTypeName, string OutputPath)> entries)
         {
-            var fullName = GetFullyQualifiedName(classSymbol);
-            var id = MakeIdentifier(classSymbol.Name) + "_" + ComputeStableHash(fullName);
-            var hintName = $"QuarkThemeCssArtifact_{id}.g.cs";
-            var escapedPath = EscapeVerbatimString(outputFilePath);
+            // Each line: {ThemeTypeName}|{OutputPath}
+            // Keep it stable + dead simple to parse at runtime.
+            var sb = new StringBuilder(capacity: 256);
+
+            for (var i = 0; i < entries.Count; i++)
+            {
+                var (themeTypeName, outputPath) = entries[i];
+
+                if (themeTypeName.Length == 0 || outputPath.Length == 0)
+                    continue;
+
+                // Guard against accidental '|' or newlines in the path; you can make this stricter if you want.
+                if (outputPath.IndexOf('|') >= 0 || outputPath.IndexOf('\n') >= 0 || outputPath.IndexOf('\r') >= 0)
+                    continue;
+
+                sb.Append(themeTypeName);
+                sb.Append('|');
+                sb.Append(outputPath);
+                sb.Append('\n');
+            }
+
+            var data = EscapeVerbatimString(sb.ToString());
 
             var source =
                 "// <auto-generated />\n" +
                 "namespace Soenneker.Quark.Gen.Themes.Generated\n" +
                 "{\n" +
-                $"    internal static class QuarkThemeCssArtifact_{id}\n" +
+                "    internal static class QuarkThemeCssManifest\n" +
                 "    {\n" +
-                $"        public const string OutputPath = @\"{escapedPath}\";\n" +
-                $"        public const string ThemeTypeName = \"{fullName}\";\n" +
+                "        /// <summary>Each line: {ThemeTypeName}|{OutputPath}</summary>\n" +
+                $"        public const string Data = @\"{data}\";\n" +
                 "    }\n" +
                 "}\n";
 
-            context.AddSource(hintName, SourceText.From(source, Encoding.UTF8));
+            context.AddSource("QuarkThemeCssManifest.g.cs", SourceText.From(source, Encoding.UTF8));
         }
 
         private static string GetFullyQualifiedName(INamedTypeSymbol classSymbol)
@@ -152,42 +207,6 @@ namespace Soenneker.Quark.Gen.Themes
 
         private static string EscapeVerbatimString(string value) =>
             value.Replace("\"", "\"\"");
-
-        private static string MakeIdentifier(string value)
-        {
-            if (string.IsNullOrWhiteSpace(value))
-                return "Theme";
-
-            var builder = new StringBuilder(value.Length);
-
-            foreach (var ch in value)
-            {
-                builder.Append(char.IsLetterOrDigit(ch) ? ch : '_');
-            }
-
-            if (builder.Length == 0 || !char.IsLetter(builder[0]) && builder[0] != '_')
-                builder.Insert(0, '_');
-
-            return builder.ToString();
-        }
-
-        private static string ComputeStableHash(string value)
-        {
-            unchecked
-            {
-                const uint fnvOffset = 2166136261;
-                const uint fnvPrime = 16777619;
-                uint hash = fnvOffset;
-
-                foreach (var ch in value)
-                {
-                    hash ^= ch;
-                    hash *= fnvPrime;
-                }
-
-                return hash.ToString("X8");
-            }
-        }
 
         private static string? GetOutputFilePath(AttributeData attributeData)
         {
@@ -201,18 +220,6 @@ namespace Soenneker.Quark.Gen.Themes
             }
 
             return null;
-        }
-
-        private readonly struct Candidate
-        {
-            public INamedTypeSymbol ClassSymbol { get; }
-            public AttributeData Attribute { get; }
-
-            public Candidate(INamedTypeSymbol classSymbol, AttributeData attribute)
-            {
-                ClassSymbol = classSymbol;
-                Attribute = attribute;
-            }
         }
     }
 }

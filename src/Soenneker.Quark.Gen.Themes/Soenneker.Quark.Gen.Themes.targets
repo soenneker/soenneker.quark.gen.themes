@@ -1,0 +1,16 @@
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <QuarkThemeBuildTasksDll Condition="'$(QuarkThemeBuildTasksDll)'==''">
+      $(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Themes.BuildTasks.dll
+    </QuarkThemeBuildTasksDll>
+  </PropertyGroup>
+
+  <Target Name="WriteQuarkThemeCss"
+          AfterTargets="Build"
+          Condition="'$(DesignTimeBuild)'!='true'
+                 and '$(IsCrossTargetingBuild)'!='true'
+                 and Exists('$(TargetPath)')
+                 and Exists('$(QuarkThemeBuildTasksDll)')">
+    <Exec Command='dotnet exec &quot;$(QuarkThemeBuildTasksDll)&quot; --targetPath &quot;$(TargetPath)&quot; --projectDir &quot;$(ProjectDir)&quot;' />
+  </Target>
+</Project>

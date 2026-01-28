@@ -17,6 +17,7 @@ Add the attribute to a class that exposes a single public static method or prope
 
 ```csharp
 using Soenneker.Quark;
+using Soenneker.Quark.Gen.Themes;
 
 [GenerateQuarkThemeCss("wwwroot/css/quark-theme.css")]
 public static class MyTheme
@@ -31,6 +32,8 @@ public static class MyTheme
     };
 }
 ```
+
+The generator also recognizes `Soenneker.Quark.Suite.Attributes.GenerateQuarkThemeCssAttribute` if you already reference `Soenneker.Quark.Suite`.
 
 During compilation, the generator will write the CSS file to the specified path so it can be referenced from HTML.
 

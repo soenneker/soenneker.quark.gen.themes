@@ -43,12 +43,23 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <None Include="..\README.md" Pack="true" PackagePath="\" />
-        <None Include="..\LICENSE" Pack="true" PackagePath="\" />
-        <None Include="..\icon.png" Pack="true" PackagePath="\" />
-        <None Include="..\build\Soenneker.Quark.Gen.Themes.targets" Pack="true" PackagePath="build\" />
-        <None Include="..\build\Soenneker.Quark.Gen.Themes.targets" Pack="true" PackagePath="buildTransitive\" />
-        <None Include="..\build\Soenneker.Quark.Gen.Themes.BuildTasks.dll" Pack="true" PackagePath="build\" />
+        <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+        <None Include="..\..\LICENSE" Pack="true" PackagePath="\" />
+        <None Include="..\..\icon.png" Pack="true" PackagePath="\" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <!-- targets live next to this csproj -->
+        <None Include="Soenneker.Quark.Gen.Themes.targets" Pack="true" PackagePath="build\" />
+        <None Include="Soenneker.Quark.Gen.Themes.targets" Pack="true" PackagePath="buildTransitive\" />
+
+        <!-- out-of-proc tool outputs -->
+        <None Include="..\Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\net10.0\Soenneker.Quark.Gen.Themes.BuildTasks.dll"
+              Pack="true" PackagePath="build\" />
+        <None Include="..\Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\net10.0\Soenneker.Quark.Gen.Themes.BuildTasks.runtimeconfig.json"
+              Pack="true" PackagePath="build\" />
+        <None Include="..\Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\net10.0\Soenneker.Quark.Gen.Themes.BuildTasks.deps.json"
+              Pack="true" PackagePath="build\" />
     </ItemGroup>
 
     <ItemGroup>
@@ -59,4 +70,10 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="all" />
     </ItemGroup>
+
+    <Target Name="BuildBuildTasksTool" BeforeTargets="Pack">
+        <MSBuild Projects="..\Soenneker.Quark.Gen.Themes.BuildTasks\Soenneker.Quark.Gen.Themes.BuildTasks.csproj"
+                 Targets="Build"
+                 Properties="Configuration=$(Configuration)" />
+    </Target>
 </Project>
