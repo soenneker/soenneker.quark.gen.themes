@@ -1,0 +1,41 @@
+<Project>
+  <PropertyGroup>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath Condition="'$(CompilerGeneratedFilesOutputPath)' == ''">$(IntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
+    <QuarkThemeBuildTasksProject>$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Themes.BuildTasks\Soenneker.Quark.Gen.Themes.BuildTasks.csproj</QuarkThemeBuildTasksProject>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(QuarkThemeCssOutputs)' == ''">
+    <QuarkThemeCssOutputs>wwwroot\css\quark-theme.css</QuarkThemeCssOutputs>
+  </PropertyGroup>
+  <PropertyGroup>
+    <BuildDependsOn>$(BuildDependsOn);WriteQuarkThemeCss</BuildDependsOn>
+    <RebuildDependsOn>$(RebuildDependsOn);WriteQuarkThemeCss</RebuildDependsOn>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(QuarkThemeCssOutputs)' != ''">
+    <_QuarkThemeCssOutputItem Include="$(QuarkThemeCssOutputs)" />
+    <UpToDateCheckOutput Include="@(_QuarkThemeCssOutputItem->'$([System.IO.Path]::GetFullPath(%(Identity), $(ProjectDir)))')" />
+  </ItemGroup>
+
+  <PropertyGroup Condition="Exists('$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Themes.BuildTasks\\bin\\$(Configuration)\\Soenneker.Quark.Gen.Themes.BuildTasks.dll')">
+    <QuarkThemeBuildTasksAssembly>$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Themes.BuildTasks.dll</QuarkThemeBuildTasksAssembly>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(QuarkThemeBuildTasksAssembly)' == '' and Exists('$(MSBuildThisFileDirectory)..\\build\\Soenneker.Quark.Gen.Themes.BuildTasks.dll')">
+    <QuarkThemeBuildTasksAssembly>$(MSBuildThisFileDirectory)..\build\Soenneker.Quark.Gen.Themes.BuildTasks.dll</QuarkThemeBuildTasksAssembly>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(QuarkThemeBuildTasksAssembly)' == ''">
+    <QuarkThemeBuildTasksAssembly>$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Themes.BuildTasks.dll</QuarkThemeBuildTasksAssembly>
+  </PropertyGroup>
+
+  <UsingTask TaskName="Soenneker.Quark.Gen.Themes.BuildTasks.QuarkThemeWriteCss" AssemblyFile="$(QuarkThemeBuildTasksAssembly)" />
+
+  <Target Name="EnsureQuarkThemeBuildTasks" BeforeTargets="WriteQuarkThemeCss" Condition="!Exists('$(QuarkThemeBuildTasksAssembly)') and Exists('$(QuarkThemeBuildTasksProject)')">
+    <MSBuild Projects="$(QuarkThemeBuildTasksProject)" Targets="Build" Properties="Configuration=$(Configuration)" />
+  </Target>
+
+  <Target Name="WriteQuarkThemeCss" AfterTargets="Build;Rebuild;AfterBuild">
+    <QuarkThemeWriteCss GeneratedFilesPath="$(CompilerGeneratedFilesOutputPath)" ProjectDir="$(ProjectDir)" TargetPath="$(TargetPath)" TargetDir="$(TargetDir)" />
+  </Target>
+</Project>

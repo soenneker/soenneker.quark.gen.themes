@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <NoDefaultLaunchSettingsFile>true</NoDefaultLaunchSettingsFile>
+        <StaticWebAssetProjectMode>Default</StaticWebAssetProjectMode>
+        <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+        <Platforms>AnyCPU</Platforms>
+        <IsPackable>false</IsPackable>
+        <NoWarn>$(NoWarn);1591</NoWarn>
+        <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+        <AttachWeakETagToCompressedAssetsDuringDevelopment>true</AttachWeakETagToCompressedAssetsDuringDevelopment>
+        <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)Generated</CompilerGeneratedFilesOutputPath>
+        <AssemblyName>Soenneker.Quark.Gen.Themes.Demo</AssemblyName>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.2" />
+        <PackageReference Include="Soenneker.Quark.Suite" Version="4.0.417" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\src\Soenneker.Quark.Gen.Themes.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    </ItemGroup>
+
+</Project>

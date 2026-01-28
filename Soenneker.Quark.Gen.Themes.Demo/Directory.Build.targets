@@ -1,0 +1,4 @@
+<Project>
+  <Import Project="$(MSBuildThisFileDirectory)..\build\Soenneker.Quark.Gen.Themes.targets"
+          Condition="Exists('$(MSBuildThisFileDirectory)..\build\Soenneker.Quark.Gen.Themes.targets')" />
+</Project>
