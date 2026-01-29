@@ -49,17 +49,15 @@
     </ItemGroup>
 
     <ItemGroup>
-        <!-- targets live next to this csproj -->
         <None Include="Soenneker.Quark.Gen.Themes.targets" Pack="true" PackagePath="build\" />
         <None Include="Soenneker.Quark.Gen.Themes.targets" Pack="true" PackagePath="buildTransitive\" />
 
-        <!-- out-of-proc tool outputs (BuildTasks uses AppendTargetFrameworkToOutputPath=false) -->
         <None Include="..\Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Themes.BuildTasks.dll"
-              Pack="true" PackagePath="build\" />
+              Pack="true" PackagePath="buildTransitive\" />
         <None Include="..\Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Themes.BuildTasks.runtimeconfig.json"
-              Pack="true" PackagePath="build\" />
+              Pack="true" PackagePath="buildTransitive\" />
         <None Include="..\Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Themes.BuildTasks.deps.json"
-              Pack="true" PackagePath="build\" />
+              Pack="true" PackagePath="buildTransitive\" />
     </ItemGroup>
 
     <ItemGroup>
@@ -71,9 +69,16 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="all" />
     </ItemGroup>
 
-    <Target Name="BuildBuildTasksTool" BeforeTargets="Pack" Condition="'$(NoBuild)' != 'true'">
+    <Target Name="BuildBuildTasksTool"
+            BeforeTargets="Pack"
+            Condition="'$(IsPackable)' == 'true'">
+
         <MSBuild Projects="..\Soenneker.Quark.Gen.Themes.BuildTasks\Soenneker.Quark.Gen.Themes.BuildTasks.csproj"
                  Targets="Build"
-                 Properties="Configuration=$(Configuration);NoBuild=false" />
+                 Properties="Configuration=$(Configuration);NoBuild=false"
+                 BuildInParallel="true" />
+
+        <Error Condition="!Exists('..\Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Themes.BuildTasks.dll')"
+               Text="BuildTasks output missing. Aborting pack to avoid publishing a broken package." />
     </Target>
 </Project>

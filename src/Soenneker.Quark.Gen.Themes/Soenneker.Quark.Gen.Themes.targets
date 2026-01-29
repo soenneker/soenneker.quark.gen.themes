@@ -1,15 +1,22 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
 
-    <!-- proves the .targets file is imported -->
     <Target Name="QuarkTheme_Imported" BeforeTargets="Build">
         <Message Importance="high" Text="✅ QuarkTheme targets imported from: $(MSBuildThisFileFullPath)" />
         <Message Importance="high" Text="MSBuildThisFileDirectory=$(MSBuildThisFileDirectory)" />
     </Target>
 
     <PropertyGroup>
-        <_QuarkThemeBuildTasksDir Condition="Exists('$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Themes.BuildTasks.dll')">$(MSBuildThisFileDirectory)</_QuarkThemeBuildTasksDir>
-        <_QuarkThemeBuildTasksDir Condition="'$(_QuarkThemeBuildTasksDir)'=='' and Exists('$(MSBuildThisFileDirectory)..\build\Soenneker.Quark.Gen.Themes.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\build\</_QuarkThemeBuildTasksDir>
-        <QuarkThemeBuildTasksDll Condition="'$(QuarkThemeBuildTasksDll)'=='' and '$(_QuarkThemeBuildTasksDir)'!=''">$(_QuarkThemeBuildTasksDir)Soenneker.Quark.Gen.Themes.BuildTasks.dll</QuarkThemeBuildTasksDll>
+        <_QuarkThemeBuildTasksDir Condition="Exists('$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Themes.BuildTasks.dll')">
+            $(MSBuildThisFileDirectory)
+        </_QuarkThemeBuildTasksDir>
+
+        <_QuarkThemeBuildTasksDir Condition="'$(_QuarkThemeBuildTasksDir)'=='' and Exists('$(MSBuildThisFileDirectory)..\build\Soenneker.Quark.Gen.Themes.BuildTasks.dll')">
+            $(MSBuildThisFileDirectory)..\build\
+        </_QuarkThemeBuildTasksDir>
+
+        <QuarkThemeBuildTasksDll Condition="'$(QuarkThemeBuildTasksDll)'=='' and '$(_QuarkThemeBuildTasksDir)'!=''">
+            $(_QuarkThemeBuildTasksDir)Soenneker.Quark.Gen.Themes.BuildTasks.dll
+        </QuarkThemeBuildTasksDll>
     </PropertyGroup>
 
     <Target Name="WriteQuarkThemeCss"
@@ -18,9 +25,18 @@
                  and '$(IsCrossTargetingBuild)'!='true'">
 
         <Message Importance="high" Text="🔥 WriteQuarkThemeCss running" />
-        <Message Importance="high" Text="TargetPath=$(TargetPath)" />
+        <Message Importance="high" Text="TargetPath=$(TargetPath) Exists=$([System.IO.File]::Exists('$(TargetPath)'))" />
         <Message Importance="high" Text="ProjectDir=$(ProjectDir)" />
-        <Message Importance="high" Text="QuarkThemeBuildTasksDll=$(QuarkThemeBuildTasksDll) Exists=$(Exists('$(QuarkThemeBuildTasksDll)'))" />
+        <Message Importance="high" Text="QuarkThemeBuildTasksDll=$(QuarkThemeBuildTasksDll) Exists=$([System.IO.File]::Exists('$(QuarkThemeBuildTasksDll)'))" />
+
+        <Error Condition="'$(QuarkThemeBuildTasksDll)'==''"
+               Text="QuarkThemeBuildTasksDll was not resolved (empty). MSBuildThisFileDirectory=$(MSBuildThisFileDirectory)" />
+
+        <Error Condition="!Exists('$(QuarkThemeBuildTasksDll)')"
+               Text="QuarkThemeBuildTasksDll not found at '$(QuarkThemeBuildTasksDll)'." />
+
+        <Error Condition="!Exists('$(TargetPath)')"
+               Text="TargetPath does not exist: '$(TargetPath)'." />
 
         <Exec
           WorkingDirectory="$(ProjectDir)"
