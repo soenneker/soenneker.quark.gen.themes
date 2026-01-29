@@ -32,9 +32,3 @@ public static class MyTheme
     };
 }
 ```
-
-The generator also recognizes `Soenneker.Quark.Suite.Attributes.GenerateQuarkThemeCssAttribute` if you already reference `Soenneker.Quark.Suite`.
-
-During compilation, the generator will write the CSS file to the specified path so it can be referenced from HTML.
-
-This package uses an MSBuild target to materialize the CSS file after `CoreCompile`. The generated CSS is embedded in compiler-generated files and extracted into your output path during the build.
