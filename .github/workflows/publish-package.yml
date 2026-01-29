@@ -59,7 +59,7 @@ jobs:
         run: dotnet test test/Soenneker.Quark.Gen.Themes.Tests/Soenneker.Quark.Gen.Themes.Tests.csproj --no-restore --verbosity normal
 
       - name: Pack
-        run: dotnet pack --no-build --configuration Release --output .
+        run: dotnet pack src/Soenneker.Quark.Gen.Themes/Soenneker.Quark.Gen.Themes.csproj --no-build --configuration Release --output .
 
       - name: Publish to NuGet with retry
         run: |
