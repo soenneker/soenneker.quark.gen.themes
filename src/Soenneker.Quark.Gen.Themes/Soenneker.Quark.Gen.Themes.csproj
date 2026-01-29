@@ -71,7 +71,6 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="all" />
     </ItemGroup>
 
-    <!-- Only run when building (no pack --no-build). When NoBuild=true, BuildTasks is already built by solution build. -->
     <Target Name="BuildBuildTasksTool" BeforeTargets="Pack" Condition="'$(NoBuild)' != 'true'">
         <MSBuild Projects="..\Soenneker.Quark.Gen.Themes.BuildTasks\Soenneker.Quark.Gen.Themes.BuildTasks.csproj"
                  Targets="Build"
