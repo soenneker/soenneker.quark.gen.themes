@@ -1,23 +1,34 @@
 <Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <PropertyGroup>
-    <!-- Prefer BuildTasks next to targets (build/), else fall back to ../build when imported from buildTransitive -->
-    <_QuarkThemeBuildTasksDir Condition="Exists('$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Themes.BuildTasks.dll')">
-      $(MSBuildThisFileDirectory)
-    </_QuarkThemeBuildTasksDir>
-    <_QuarkThemeBuildTasksDir Condition="'$(_QuarkThemeBuildTasksDir)'=='' and Exists('$(MSBuildThisFileDirectory)..\build\Soenneker.Quark.Gen.Themes.BuildTasks.dll')">
-      $(MSBuildThisFileDirectory)..\build\
-    </_QuarkThemeBuildTasksDir>
-    <QuarkThemeBuildTasksDll Condition="'$(QuarkThemeBuildTasksDll)'=='' and '$(_QuarkThemeBuildTasksDir)'!=''">
-      $(_QuarkThemeBuildTasksDir)Soenneker.Quark.Gen.Themes.BuildTasks.dll
-    </QuarkThemeBuildTasksDll>
-  </PropertyGroup>
 
-  <Target Name="WriteQuarkThemeCss"
-          AfterTargets="Build"
-          Condition="'$(DesignTimeBuild)'!='true'
-                 and '$(IsCrossTargetingBuild)'!='true'
-                 and Exists('$(TargetPath)')
-                 and Exists('$(QuarkThemeBuildTasksDll)')">
-    <Exec Command='dotnet exec &quot;$(QuarkThemeBuildTasksDll)&quot; --targetPath &quot;$(TargetPath)&quot; --projectDir &quot;$(ProjectDir)&quot;' />
-  </Target>
+    <!-- proves the .targets file is imported -->
+    <Target Name="QuarkTheme_Imported" BeforeTargets="Build">
+        <Message Importance="high" Text="✅ QuarkTheme targets imported from: $(MSBuildThisFileFullPath)" />
+        <Message Importance="high" Text="MSBuildThisFileDirectory=$(MSBuildThisFileDirectory)" />
+    </Target>
+
+    <PropertyGroup>
+        <_QuarkThemeBuildTasksDir Condition="Exists('$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Themes.BuildTasks.dll')">$(MSBuildThisFileDirectory)</_QuarkThemeBuildTasksDir>
+        <_QuarkThemeBuildTasksDir Condition="'$(_QuarkThemeBuildTasksDir)'=='' and Exists('$(MSBuildThisFileDirectory)..\build\Soenneker.Quark.Gen.Themes.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\build\</_QuarkThemeBuildTasksDir>
+        <QuarkThemeBuildTasksDll Condition="'$(QuarkThemeBuildTasksDll)'=='' and '$(_QuarkThemeBuildTasksDir)'!=''">$(_QuarkThemeBuildTasksDir)Soenneker.Quark.Gen.Themes.BuildTasks.dll</QuarkThemeBuildTasksDll>
+    </PropertyGroup>
+
+    <Target Name="WriteQuarkThemeCss"
+            AfterTargets="Build"
+            Condition="'$(DesignTimeBuild)'!='true'
+                 and '$(IsCrossTargetingBuild)'!='true'">
+
+        <Message Importance="high" Text="🔥 WriteQuarkThemeCss running" />
+        <Message Importance="high" Text="TargetPath=$(TargetPath)" />
+        <Message Importance="high" Text="ProjectDir=$(ProjectDir)" />
+        <Message Importance="high" Text="QuarkThemeBuildTasksDll=$(QuarkThemeBuildTasksDll) Exists=$(Exists('$(QuarkThemeBuildTasksDll)'))" />
+
+        <Exec
+          WorkingDirectory="$(ProjectDir)"
+          IgnoreExitCode="false"
+          ConsoleToMSBuild="true"
+          StandardOutputImportance="high"
+          StandardErrorImportance="high"
+          Command='dotnet exec &quot;$(QuarkThemeBuildTasksDll)&quot; --targetPath &quot;$(TargetPath)&quot; --projectDir &quot;$(ProjectDir)&quot;' />
+    </Target>
+
 </Project>
