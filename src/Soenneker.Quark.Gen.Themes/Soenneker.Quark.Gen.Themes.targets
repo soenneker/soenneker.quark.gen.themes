@@ -6,24 +6,11 @@
     </Target>
 
     <PropertyGroup>
-        <!-- Case 1: imported from buildTransitive/ and the tool lives next to the .targets -->
-        <_QuarkThemeBuildTasksDir
-            Condition="Exists('$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Themes.BuildTasks.dll')">
-            $(MSBuildThisFileDirectory)
-        </_QuarkThemeBuildTasksDir>
+        <_QuarkThemeBuildTasksDir Condition="Exists('$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Themes.BuildTasks.dll')">$(MSBuildThisFileDirectory)</_QuarkThemeBuildTasksDir>
 
-        <!-- Case 2: imported from build/ but the tool lives in the sibling buildTransitive/ -->
-        <_QuarkThemeBuildTasksDir
-            Condition="'$(_QuarkThemeBuildTasksDir)'=='' and
-                   Exists('$(MSBuildThisFileDirectory)..\buildTransitive\Soenneker.Quark.Gen.Themes.BuildTasks.dll')">
-            $(MSBuildThisFileDirectory)..\buildTransitive\
-        </_QuarkThemeBuildTasksDir>
+        <_QuarkThemeBuildTasksDir Condition="'$(_QuarkThemeBuildTasksDir)'=='' and Exists('$(MSBuildThisFileDirectory)..\buildTransitive\Soenneker.Quark.Gen.Themes.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\buildTransitive\</_QuarkThemeBuildTasksDir>
 
-        <!-- Final resolved tool path -->
-        <QuarkThemeBuildTasksDll
-            Condition="'$(QuarkThemeBuildTasksDll)'=='' and '$(_QuarkThemeBuildTasksDir)'!=''">
-            $(_QuarkThemeBuildTasksDir)Soenneker.Quark.Gen.Themes.BuildTasks.dll
-        </QuarkThemeBuildTasksDll>
+        <QuarkThemeBuildTasksDll Condition="'$(QuarkThemeBuildTasksDll)'=='' and '$(_QuarkThemeBuildTasksDir)'!=''">$(_QuarkThemeBuildTasksDir)Soenneker.Quark.Gen.Themes.BuildTasks.dll</QuarkThemeBuildTasksDll>
     </PropertyGroup>
 
     <Target Name="WriteQuarkThemeCss"
