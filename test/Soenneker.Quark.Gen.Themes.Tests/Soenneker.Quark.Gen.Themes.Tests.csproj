@@ -21,19 +21,20 @@
         </Content>
     </ItemGroup>
 
-    <ItemGroup><PackageReference Include="Soenneker.Utils.Test" Version="4.0.302" />
+    <ItemGroup>
+        <PackageReference Include="Soenneker.Utils.Test" Version="4.0.302" />
         <PackageReference Include="Soenneker.Tests.FixturedUnit" Version="4.0.2173" />
         <PackageReference Include="xUnit.v3" Version="3.2.2" />
     </ItemGroup>
 
     <ItemGroup>
         <Content Include="testconfig.json">
-          <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
         </Content>
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Soenneker.Quark.Gen.Themes\Soenneker.Quark.Gen.Themes.csproj" />
+        <ProjectReference Include="..\..\src\Soenneker.Quark.Gen.Themes\Soenneker.Quark.Gen.Themes.csproj" />
     </ItemGroup>
 
 </Project>
