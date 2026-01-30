@@ -11,6 +11,11 @@
         <_QuarkThemeBuildTasksDir Condition="'$(_QuarkThemeBuildTasksDir)'=='' and Exists('$(MSBuildThisFileDirectory)..\buildTransitive\Soenneker.Quark.Gen.Themes.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\buildTransitive\</_QuarkThemeBuildTasksDir>
 
         <QuarkThemeBuildTasksDll Condition="'$(QuarkThemeBuildTasksDll)'=='' and '$(_QuarkThemeBuildTasksDir)'!=''">$(_QuarkThemeBuildTasksDir)Soenneker.Quark.Gen.Themes.BuildTasks.dll</QuarkThemeBuildTasksDll>
+
+        <!-- Set to true to emit unminified CSS; false to skip. Can be used together with QuarkThemeBuildMinified. -->
+        <QuarkThemeBuildUnminified Condition="'$(QuarkThemeBuildUnminified)'==''">true</QuarkThemeBuildUnminified>
+        <!-- Set to true to emit minified CSS; false to skip. Can be used together with QuarkThemeBuildUnminified. -->
+        <QuarkThemeBuildMinified Condition="'$(QuarkThemeBuildMinified)'==''">true</QuarkThemeBuildMinified>
     </PropertyGroup>
 
     <Target Name="WriteQuarkThemeCss"
@@ -38,7 +43,7 @@
           ConsoleToMSBuild="true"
           StandardOutputImportance="high"
           StandardErrorImportance="high"
-          Command='dotnet exec &quot;$(QuarkThemeBuildTasksDll)&quot; --targetPath &quot;$(TargetPath)&quot; --projectDir &quot;$(ProjectDir)&quot;' />
+          Command='dotnet exec &quot;$(QuarkThemeBuildTasksDll)&quot; --targetPath &quot;$(TargetPath)&quot; --projectDir &quot;$(ProjectDir)&quot; --buildUnminified &quot;$(QuarkThemeBuildUnminified)&quot; --buildMinified &quot;$(QuarkThemeBuildMinified)&quot;' />
     </Target>
 
 </Project>

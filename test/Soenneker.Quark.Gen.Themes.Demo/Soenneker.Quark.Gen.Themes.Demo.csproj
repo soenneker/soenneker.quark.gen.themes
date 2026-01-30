@@ -21,12 +21,11 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>-->
-        <PackageReference Include="Soenneker.Quark.Suite" Version="4.0.417" />
+        <PackageReference Include="Soenneker.Quark.Suite" Version="4.0.419" />
     </ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Soenneker.Quark.Gen.Themes\Soenneker.Quark.Gen.Themes.csproj" OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false"/>
+        <ProjectReference Include="..\..\src\Soenneker.Quark.Gen.Themes\Soenneker.Quark.Gen.Themes.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
     </ItemGroup>
 
 </Project>

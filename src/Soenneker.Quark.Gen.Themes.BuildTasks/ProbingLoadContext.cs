@@ -1,13 +1,19 @@
+using System;
 using System.IO;
 using System.Reflection;
 using System.Runtime.Loader;
 
-namespace Soenneker.Quark.Gen.Themes.CssWriter;
+namespace Soenneker.Quark.Gen.Themes.BuildTasks;
 
 internal sealed class ProbingLoadContext : AssemblyLoadContext
 {
     private readonly string _targetDir;
     private readonly string _frameworkDir;
+    private static readonly string[] SharedAssemblyPrefixes =
+    {
+        "Microsoft.Extensions.",
+        "Microsoft.AspNetCore.",
+    };
 
     public ProbingLoadContext(string targetDir)
     {
@@ -21,6 +27,18 @@ internal sealed class ProbingLoadContext : AssemblyLoadContext
         if (string.IsNullOrWhiteSpace(name))
             return null;
 
+        if (IsSharedFrameworkAssembly(name))
+        {
+            try
+            {
+                return AssemblyLoadContext.Default.LoadFromAssemblyName(assemblyName);
+            }
+            catch
+            {
+                // ignore and fall back to probing
+            }
+        }
+
         var candidate = Path.Combine(_targetDir, name + ".dll");
         if (File.Exists(candidate))
             return LoadFromAssemblyPath(candidate);
@@ -30,5 +48,16 @@ internal sealed class ProbingLoadContext : AssemblyLoadContext
             return LoadFromAssemblyPath(candidate);
 
         return null;
+    }
+
+    private static bool IsSharedFrameworkAssembly(string name)
+    {
+        for (var i = 0; i < SharedAssemblyPrefixes.Length; i++)
+        {
+            if (name.StartsWith(SharedAssemblyPrefixes[i], StringComparison.Ordinal))
+                return true;
+        }
+
+        return false;
     }
 }

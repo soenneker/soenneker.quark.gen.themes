@@ -26,7 +26,7 @@ namespace Soenneker.Quark.Gen.Themes
         private static readonly DiagnosticDescriptor ThemeFactoryMissing = new(
             "QTG002",
             "Theme factory missing",
-            "GenerateQuarkThemeCssAttribute on '{0}' requires a single public static method or property returning Soenneker.Quark.Theme",
+            "GenerateQuarkThemeCssAttribute on '{0}' requires a single public static method or property returning Soenneker.Quark.Theme (optionally taking IServiceProvider)",
             "QuarkThemeGenerator",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true);
@@ -71,7 +71,8 @@ namespace Soenneker.Quark.Gen.Themes
                     return;
                 }
 
-                var entries = new List<(string ThemeTypeName, string OutputPath)>(capacity: suiteCandidates.Length + generatorCandidates.Length);
+                var serviceProviderType = compilation.GetTypeByMetadataName("System.IServiceProvider");
+                var entries = new List<(string ThemeTypeName, string OutputPath, bool BuildUnminified, bool BuildMinified)>(capacity: suiteCandidates.Length + generatorCandidates.Length);
 
                 foreach (var candidate in MergeCandidates(suiteCandidates, generatorCandidates))
                 {
@@ -86,14 +87,15 @@ namespace Soenneker.Quark.Gen.Themes
                         continue;
                     }
 
-                    if (!TryGetThemeFactoryMember(classSymbol, themeType))
+                    if (!TryGetThemeFactoryMember(classSymbol, themeType, serviceProviderType))
                     {
                         spc.ReportDiagnostic(Diagnostic.Create(ThemeFactoryMissing, classLocation, classSymbol.Name));
                         continue;
                     }
 
                     var fullName = GetFullyQualifiedName(classSymbol);
-                    entries.Add((fullName, outputFilePath.Trim()));
+                    var (buildUnminified, buildMinified) = GetBuildUnminifiedAndMinified(attributeData);
+                    entries.Add((fullName, outputFilePath.Trim(), buildUnminified, buildMinified));
                 }
 
                 EmitManifest(spc, entries);
@@ -131,7 +133,7 @@ namespace Soenneker.Quark.Gen.Themes
             }
         }
 
-        private static bool TryGetThemeFactoryMember(INamedTypeSymbol classSymbol, INamedTypeSymbol themeType)
+        private static bool TryGetThemeFactoryMember(INamedTypeSymbol classSymbol, INamedTypeSymbol themeType, INamedTypeSymbol? serviceProviderType)
         {
             var matches = 0;
 
@@ -150,7 +152,7 @@ namespace Soenneker.Quark.Gen.Themes
                 if (member is IMethodSymbol method &&
                     method.DeclaredAccessibility == Accessibility.Public &&
                     method.IsStatic &&
-                    method.Parameters.Length == 0 &&
+                    IsValidFactoryMethod(method, serviceProviderType) &&
                     SymbolEqualityComparer.Default.Equals(method.ReturnType, themeType))
                 {
                     matches++;
@@ -160,15 +162,26 @@ namespace Soenneker.Quark.Gen.Themes
             return matches == 1;
         }
 
-        private static void EmitManifest(SourceProductionContext context, List<(string ThemeTypeName, string OutputPath)> entries)
+        private static bool IsValidFactoryMethod(IMethodSymbol method, INamedTypeSymbol? serviceProviderType)
         {
-            // Each line: {ThemeTypeName}|{OutputPath}
+            if (method.Parameters.Length == 0)
+                return true;
+
+            if (method.Parameters.Length != 1 || serviceProviderType is null)
+                return false;
+
+            return SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, serviceProviderType);
+        }
+
+        private static void EmitManifest(SourceProductionContext context, List<(string ThemeTypeName, string OutputPath, bool BuildUnminified, bool BuildMinified)> entries)
+        {
+            // Each line: {ThemeTypeName}|{OutputPath}|{BuildUnminified}|{BuildMinified}
             // Keep it stable + dead simple to parse at runtime.
             var sb = new StringBuilder(capacity: 256);
 
             for (var i = 0; i < entries.Count; i++)
             {
-                var (themeTypeName, outputPath) = entries[i];
+                var (themeTypeName, outputPath, buildUnminified, buildMinified) = entries[i];
 
                 if (themeTypeName.Length == 0 || outputPath.Length == 0)
                     continue;
@@ -180,6 +193,10 @@ namespace Soenneker.Quark.Gen.Themes
                 sb.Append(themeTypeName);
                 sb.Append('|');
                 sb.Append(outputPath);
+                sb.Append('|');
+                sb.Append(buildUnminified ? "1" : "0");
+                sb.Append('|');
+                sb.Append(buildMinified ? "1" : "0");
                 sb.Append('\n');
             }
 
@@ -191,7 +208,7 @@ namespace Soenneker.Quark.Gen.Themes
                 "{\n" +
                 "    internal static class QuarkThemeCssManifest\n" +
                 "    {\n" +
-                "        /// <summary>Each line: {ThemeTypeName}|{OutputPath}</summary>\n" +
+                "        /// <summary>Each line: {ThemeTypeName}|{OutputPath}|{BuildUnminified}|{BuildMinified}</summary>\n" +
                 $"        public const string Data = @\"{data}\";\n" +
                 "    }\n" +
                 "}\n";
@@ -220,6 +237,22 @@ namespace Soenneker.Quark.Gen.Themes
             }
 
             return null;
+        }
+
+        private static (bool BuildUnminified, bool BuildMinified) GetBuildUnminifiedAndMinified(AttributeData attributeData)
+        {
+            var buildUnminified = true;
+            var buildMinified = true;
+
+            foreach (var namedArgument in attributeData.NamedArguments)
+            {
+                if (namedArgument.Key == "BuildUnminified" && namedArgument.Value.Value is bool u)
+                    buildUnminified = u;
+                else if (namedArgument.Key == "BuildMinified" && namedArgument.Value.Value is bool m)
+                    buildMinified = m;
+            }
+
+            return (buildUnminified, buildMinified);
         }
     }
 }
