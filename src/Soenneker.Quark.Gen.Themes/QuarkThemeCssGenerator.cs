@@ -12,7 +12,7 @@ namespace Soenneker.Quark.Gen.Themes
     [Generator]
     public sealed class QuarkThemeCssGenerator : IIncrementalGenerator
     {
-        private const string _suiteAttributeName = "Soenneker.Quark.Suite.Attributes.GenerateQuarkThemeCssAttribute";
+        private const string _suiteAttributeName = "Soenneker.Quark.GenerateQuarkThemeCssAttribute";
         private const string _generatorAttributeName = "Soenneker.Quark.Gen.Themes.GenerateQuarkThemeCssAttribute";
 
         private static readonly DiagnosticDescriptor _missingOutputPath = new(

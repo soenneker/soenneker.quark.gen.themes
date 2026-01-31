@@ -1,5 +1,3 @@
-using Soenneker.Quark.Suite.Attributes;
-
 namespace Soenneker.Quark.Gen.Themes.Demo;
 
 [GenerateQuarkThemeCss("wwwroot/css/quark-theme.css")]
