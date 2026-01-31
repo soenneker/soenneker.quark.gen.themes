@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Soenneker.Quark.Gen.Themes.BuildTasks.Dtos;
 using System;
 using System.Threading;
@@ -46,6 +47,12 @@ public sealed class Program
                 builder.SetBasePath(hostingContext.HostingEnvironment.ContentRootPath);
 
                 builder.Build();
+            })
+            .ConfigureLogging(logging =>
+            {
+                // Avoid EventLog provider dependency in build task execution
+                logging.ClearProviders();
+                logging.AddConsole();
             })
             .ConfigureServices((_, services) =>
             {
