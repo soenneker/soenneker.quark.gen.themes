@@ -9,7 +9,7 @@ internal sealed class ProbingLoadContext : AssemblyLoadContext
 {
     private readonly string _targetDir;
     private readonly string _frameworkDir;
-    private static readonly string[] SharedAssemblyPrefixes =
+    private static readonly string[] _sharedAssemblyPrefixes =
     {
         "Microsoft.Extensions.",
         "Microsoft.AspNetCore.",
@@ -52,9 +52,9 @@ internal sealed class ProbingLoadContext : AssemblyLoadContext
 
     private static bool IsSharedFrameworkAssembly(string name)
     {
-        for (var i = 0; i < SharedAssemblyPrefixes.Length; i++)
+        for (var i = 0; i < _sharedAssemblyPrefixes.Length; i++)
         {
-            if (name.StartsWith(SharedAssemblyPrefixes[i], StringComparison.Ordinal))
+            if (name.StartsWith(_sharedAssemblyPrefixes[i], StringComparison.Ordinal))
                 return true;
         }
 

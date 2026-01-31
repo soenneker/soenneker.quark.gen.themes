@@ -18,8 +18,8 @@ namespace Soenneker.Quark.Gen.Themes.BuildTasks;
 ///<inheritdoc cref="IQuarkThemeWriteCssRunner"/>
 public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 {
-    private const string ManifestTypeName = "Soenneker.Quark.Gen.Themes.Generated.QuarkThemeCssManifest";
-    private const string ManifestFieldName = "Data";
+    private const string _manifestTypeName = "Soenneker.Quark.Gen.Themes.Generated.QuarkThemeCssManifest";
+    private const string _manifestFieldName = "Data";
 
     private readonly ICssMinifier _cssMinifier;
     private readonly IFileUtil _fileUtil;
@@ -221,12 +221,12 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 
     private static string? ReadManifest(Assembly asm)
     {
-        var type = asm.GetType(ManifestTypeName, throwOnError: false, ignoreCase: false);
+        var type = asm.GetType(_manifestTypeName, throwOnError: false, ignoreCase: false);
         if (type is null)
             return null;
 
         // const string Data => emits as a literal field
-        var field = type.GetField(ManifestFieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+        var field = type.GetField(_manifestFieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
         if (field?.FieldType == typeof(string))
             return field.GetRawConstantValue() as string;
 

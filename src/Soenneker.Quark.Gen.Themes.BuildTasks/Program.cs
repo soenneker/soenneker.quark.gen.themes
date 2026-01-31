@@ -1,9 +1,6 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Serilog;
-using Soenneker.Enums.DeployEnvironment;
-using Soenneker.Extensions.LoggerConfiguration;
 using Soenneker.Quark.Gen.Themes.BuildTasks.Dtos;
 using System;
 using System.Threading;
@@ -26,7 +23,7 @@ public sealed class Program
         }
         catch (Exception e)
         {
-            Log.Error(e, "Stopped program because of exception");
+            Console.Error.WriteLine($"Stopped program because of exception: {e}");
             throw;
         }
         finally
@@ -34,7 +31,6 @@ public sealed class Program
             Console.CancelKeyPress -= OnCancelKeyPress; // Detach the handler
 
             _cts.Dispose();
-            await Log.CloseAndFlushAsync();
         }
     }
 
@@ -43,10 +39,6 @@ public sealed class Program
     /// </summary>
     public static IHostBuilder CreateHostBuilder(string[] args)
     {
-        DeployEnvironment envEnum = DeployEnvironment.Production;
-
-        LoggerConfigurationExtension.BuildBootstrapLoggerAndSetGloballySync(envEnum);
-
         IHostBuilder host = Host.CreateDefaultBuilder(args)
             .ConfigureAppConfiguration((hostingContext, builder) =>
             {
@@ -55,7 +47,6 @@ public sealed class Program
 
                 builder.Build();
             })
-            .UseSerilog()
             .ConfigureServices((_, services) =>
             {
                 services.AddSingleton(new CommandLineArgs(args));

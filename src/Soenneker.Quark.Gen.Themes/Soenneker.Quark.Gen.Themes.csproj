@@ -52,12 +52,8 @@
         <None Include="Soenneker.Quark.Gen.Themes.targets" Pack="true" PackagePath="build\" />
         <None Include="Soenneker.Quark.Gen.Themes.targets" Pack="true" PackagePath="buildTransitive\" />
 
-        <None Include="..\Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Themes.BuildTasks.dll"
-              Pack="true" PackagePath="buildTransitive\" />
-        <None Include="..\Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Themes.BuildTasks.runtimeconfig.json"
-              Pack="true" PackagePath="buildTransitive\" />
-        <None Include="..\Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Themes.BuildTasks.deps.json"
-              Pack="true" PackagePath="buildTransitive\" />
+        <None Include="..\Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\**\*.*"
+              Pack="true" PackagePath="buildTransitive\%(RecursiveDir)" />
     </ItemGroup>
 
     <ItemGroup>

@@ -12,10 +12,10 @@ namespace Soenneker.Quark.Gen.Themes
     [Generator]
     public sealed class QuarkThemeCssGenerator : IIncrementalGenerator
     {
-        private const string SuiteAttributeName = "Soenneker.Quark.Suite.Attributes.GenerateQuarkThemeCssAttribute";
-        private const string GeneratorAttributeName = "Soenneker.Quark.Gen.Themes.GenerateQuarkThemeCssAttribute";
+        private const string _suiteAttributeName = "Soenneker.Quark.Suite.Attributes.GenerateQuarkThemeCssAttribute";
+        private const string _generatorAttributeName = "Soenneker.Quark.Gen.Themes.GenerateQuarkThemeCssAttribute";
 
-        private static readonly DiagnosticDescriptor MissingOutputPath = new(
+        private static readonly DiagnosticDescriptor _missingOutputPath = new(
             "QTG001",
             "Missing output file path",
             "GenerateQuarkThemeCssAttribute on '{0}' requires a non-empty output file path",
@@ -23,7 +23,7 @@ namespace Soenneker.Quark.Gen.Themes
             DiagnosticSeverity.Error,
             isEnabledByDefault: true);
 
-        private static readonly DiagnosticDescriptor ThemeFactoryMissing = new(
+        private static readonly DiagnosticDescriptor _themeFactoryMissing = new(
             "QTG002",
             "Theme factory missing",
             "GenerateQuarkThemeCssAttribute on '{0}' requires a single public static method or property returning Soenneker.Quark.Theme (optionally taking IServiceProvider)",
@@ -31,7 +31,7 @@ namespace Soenneker.Quark.Gen.Themes
             DiagnosticSeverity.Error,
             isEnabledByDefault: true);
 
-        private static readonly DiagnosticDescriptor ThemeTypeMissing = new(
+        private static readonly DiagnosticDescriptor _themeTypeMissing = new(
             "QTG004",
             "Theme type missing",
             "Unable to locate Soenneker.Quark.Theme in referenced assemblies",
@@ -42,12 +42,12 @@ namespace Soenneker.Quark.Gen.Themes
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
             var suiteThemeClasses = context.SyntaxProvider.ForAttributeWithMetadataName(
-                SuiteAttributeName,
+                _suiteAttributeName,
                 static (node, _) => node is ClassDeclarationSyntax,
                 static (ctx, _) => new Candidate((INamedTypeSymbol)ctx.TargetSymbol, ctx.Attributes.First()));
 
             var generatorThemeClasses = context.SyntaxProvider.ForAttributeWithMetadataName(
-                GeneratorAttributeName,
+                _generatorAttributeName,
                 static (node, _) => node is ClassDeclarationSyntax,
                 static (ctx, _) => new Candidate((INamedTypeSymbol)ctx.TargetSymbol, ctx.Attributes.First()));
 
@@ -67,7 +67,7 @@ namespace Soenneker.Quark.Gen.Themes
                 var themeType = compilation.GetTypeByMetadataName("Soenneker.Quark.Theme");
                 if (themeType is null)
                 {
-                    spc.ReportDiagnostic(Diagnostic.Create(ThemeTypeMissing, Location.None));
+                    spc.ReportDiagnostic(Diagnostic.Create(_themeTypeMissing, Location.None));
                     return;
                 }
 
@@ -83,13 +83,13 @@ namespace Soenneker.Quark.Gen.Themes
                     var outputFilePath = GetOutputFilePath(attributeData);
                     if (outputFilePath is null || outputFilePath.Trim().Length == 0)
                     {
-                        spc.ReportDiagnostic(Diagnostic.Create(MissingOutputPath, classLocation, classSymbol.Name));
+                        spc.ReportDiagnostic(Diagnostic.Create(_missingOutputPath, classLocation, classSymbol.Name));
                         continue;
                     }
 
                     if (!TryGetThemeFactoryMember(classSymbol, themeType, serviceProviderType))
                     {
-                        spc.ReportDiagnostic(Diagnostic.Create(ThemeFactoryMissing, classLocation, classSymbol.Name));
+                        spc.ReportDiagnostic(Diagnostic.Create(_themeFactoryMissing, classLocation, classSymbol.Name));
                         continue;
                     }
 
