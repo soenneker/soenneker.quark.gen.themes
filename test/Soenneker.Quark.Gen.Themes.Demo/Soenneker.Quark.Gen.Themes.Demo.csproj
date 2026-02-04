@@ -21,7 +21,7 @@
           <PrivateAssets>all</PrivateAssets>
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>-->
-        <PackageReference Include="Soenneker.Quark.Suite" Version="4.0.435" />
+        <PackageReference Include="Soenneker.Quark.Suite" Version="4.0.436" />
     </ItemGroup>
 
     <ItemGroup>
