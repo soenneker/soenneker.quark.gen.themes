@@ -80,10 +80,9 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
                 return 0; // nothing to do
 
             var componentsGen = FindLoadedType(loadContext, "Soenneker.Quark.ComponentsCssGenerator");
-            var bootstrapGen = FindLoadedType(loadContext, "Soenneker.Quark.BootstrapCssGenerator");
 
-            if (componentsGen is null || bootstrapGen is null)
-                return Fail("Missing required types: Soenneker.Quark.ComponentsCssGenerator / Soenneker.Quark.BootstrapCssGenerator");
+            if (componentsGen is null)
+                return Fail("Missing required type: Soenneker.Quark.ComponentsCssGenerator");
 
             foreach (var entry in ParseManifest(manifest))
             {
@@ -105,7 +104,7 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
                 if (themeInstance is null)
                     continue;
 
-                var css = GenerateCss(themeInstance, componentsGen, bootstrapGen);
+                var css = GenerateCss(themeInstance, componentsGen);
                 if (css is null)
                     continue;
 
@@ -339,38 +338,15 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
         return null;
     }
 
-    private static string? GenerateCss(object themeInstance, Type componentsGeneratorType, Type bootstrapGeneratorType)
+    private static string? GenerateCss(object themeInstance, Type componentsGeneratorType)
     {
-        var parts = new List<string>(2);
-
         var themeType = themeInstance.GetType();
-
         var componentsMethod = FindSingleArgMethod(componentsGeneratorType, "Generate", themeType);
-        if (componentsMethod is not null)
-        {
-            var css = componentsMethod.Invoke(null, new[] { themeInstance }) as string;
-            if (!string.IsNullOrWhiteSpace(css))
-                parts.Add(css!);
-        }
+        if (componentsMethod is null)
+            return null;
 
-        var bootstrapVarsProp = themeType.GetProperty("BootstrapCssVariables", BindingFlags.Public | BindingFlags.Instance);
-        var bootstrapVars = bootstrapVarsProp?.GetValue(themeInstance);
-
-        if (bootstrapVars is not null)
-        {
-            var bootstrapMethod = FindSingleArgMethod(bootstrapGeneratorType, "Generate", bootstrapVars.GetType());
-            if (bootstrapMethod is not null)
-            {
-                var css = bootstrapMethod.Invoke(null, new[] { bootstrapVars }) as string;
-                if (!string.IsNullOrWhiteSpace(css))
-                    parts.Add(css!);
-            }
-        }
-
-        if (parts.Count == 0)
-            return string.Empty;
-
-        return string.Join("\n\n", parts);
+        var css = componentsMethod.Invoke(null, new[] { themeInstance }) as string;
+        return string.IsNullOrWhiteSpace(css) ? null : css;
     }
 
     private static MethodInfo? FindSingleArgMethod(Type type, string name, Type argType)
