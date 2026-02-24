@@ -41,46 +41,46 @@ namespace Soenneker.Quark.Gen.Themes
 
         public void Initialize(IncrementalGeneratorInitializationContext context)
         {
-            var suiteThemeClasses = context.SyntaxProvider.ForAttributeWithMetadataName(
+            IncrementalValuesProvider<Candidate> suiteThemeClasses = context.SyntaxProvider.ForAttributeWithMetadataName(
                 _suiteAttributeName,
                 static (node, _) => node is ClassDeclarationSyntax,
                 static (ctx, _) => new Candidate((INamedTypeSymbol)ctx.TargetSymbol, ctx.Attributes.First()));
 
-            var generatorThemeClasses = context.SyntaxProvider.ForAttributeWithMetadataName(
+            IncrementalValuesProvider<Candidate> generatorThemeClasses = context.SyntaxProvider.ForAttributeWithMetadataName(
                 _generatorAttributeName,
                 static (node, _) => node is ClassDeclarationSyntax,
                 static (ctx, _) => new Candidate((INamedTypeSymbol)ctx.TargetSymbol, ctx.Attributes.First()));
 
-            var combined = context.CompilationProvider
-                .Combine(suiteThemeClasses.Collect())
-                .Combine(generatorThemeClasses.Collect());
+            IncrementalValueProvider<((Compilation Left, ImmutableArray<Candidate> Right) Left, ImmutableArray<Candidate> Right)> combined = context.CompilationProvider
+                                                                                                                                                    .Combine(suiteThemeClasses.Collect())
+                                                                                                                                                    .Combine(generatorThemeClasses.Collect());
 
             context.RegisterSourceOutput(combined, static (spc, data) =>
             {
-                var compilation = data.Left.Left;
-                var suiteCandidates = data.Left.Right;
-                var generatorCandidates = data.Right;
+                Compilation? compilation = data.Left.Left;
+                ImmutableArray<Candidate> suiteCandidates = data.Left.Right;
+                ImmutableArray<Candidate> generatorCandidates = data.Right;
 
                 if (suiteCandidates.IsDefaultOrEmpty && generatorCandidates.IsDefaultOrEmpty)
                     return;
 
-                var themeType = compilation.GetTypeByMetadataName("Soenneker.Quark.Theme");
+                INamedTypeSymbol? themeType = compilation.GetTypeByMetadataName("Soenneker.Quark.Theme");
                 if (themeType is null)
                 {
                     spc.ReportDiagnostic(Diagnostic.Create(_themeTypeMissing, Location.None));
                     return;
                 }
 
-                var serviceProviderType = compilation.GetTypeByMetadataName("System.IServiceProvider");
+                INamedTypeSymbol? serviceProviderType = compilation.GetTypeByMetadataName("System.IServiceProvider");
                 var entries = new List<(string ThemeTypeName, string OutputPath, bool BuildUnminified, bool BuildMinified)>(capacity: suiteCandidates.Length + generatorCandidates.Length);
 
-                foreach (var candidate in MergeCandidates(suiteCandidates, generatorCandidates))
+                foreach (Candidate candidate in MergeCandidates(suiteCandidates, generatorCandidates))
                 {
-                    var classSymbol = candidate.ClassSymbol;
-                    var attributeData = candidate.Attribute;
-                    var classLocation = classSymbol.Locations.FirstOrDefault();
+                    INamedTypeSymbol classSymbol = candidate.ClassSymbol;
+                    AttributeData attributeData = candidate.Attribute;
+                    Location? classLocation = classSymbol.Locations.FirstOrDefault();
 
-                    var outputFilePath = GetOutputFilePath(attributeData);
+                    string? outputFilePath = GetOutputFilePath(attributeData);
                     if (outputFilePath is null || outputFilePath.Trim().Length == 0)
                     {
                         spc.ReportDiagnostic(Diagnostic.Create(_missingOutputPath, classLocation, classSymbol.Name));
@@ -93,8 +93,8 @@ namespace Soenneker.Quark.Gen.Themes
                         continue;
                     }
 
-                    var fullName = GetFullyQualifiedName(classSymbol);
-                    var (buildUnminified, buildMinified) = GetBuildUnminifiedAndMinified(attributeData);
+                    string fullName = GetFullyQualifiedName(classSymbol);
+                    (bool buildUnminified, bool buildMinified) = GetBuildUnminifiedAndMinified(attributeData);
                     entries.Add((fullName, outputFilePath.Trim(), buildUnminified, buildMinified));
                 }
 
@@ -126,7 +126,7 @@ namespace Soenneker.Quark.Gen.Themes
             if (candidates.IsDefaultOrEmpty)
                 return;
 
-            foreach (var candidate in candidates)
+            foreach (Candidate candidate in candidates)
             {
                 if (seen.Add(candidate.ClassSymbol))
                     merged.Add(candidate);
@@ -137,7 +137,7 @@ namespace Soenneker.Quark.Gen.Themes
         {
             var matches = 0;
 
-            foreach (var member in classSymbol.GetMembers())
+            foreach (ISymbol? member in classSymbol.GetMembers())
             {
                 if (member is IPropertySymbol property &&
                     property.DeclaredAccessibility == Accessibility.Public &&
@@ -181,7 +181,7 @@ namespace Soenneker.Quark.Gen.Themes
 
             for (var i = 0; i < entries.Count; i++)
             {
-                var (themeTypeName, outputPath, buildUnminified, buildMinified) = entries[i];
+                (string themeTypeName, string outputPath, bool buildUnminified, bool buildMinified) = entries[i];
 
                 if (themeTypeName.Length == 0 || outputPath.Length == 0)
                     continue;
@@ -200,9 +200,9 @@ namespace Soenneker.Quark.Gen.Themes
                 sb.Append('\n');
             }
 
-            var data = EscapeVerbatimString(sb.ToString());
+            string data = EscapeVerbatimString(sb.ToString());
 
-            var source =
+            string source =
                 "// <auto-generated />\n" +
                 "namespace Soenneker.Quark.Gen.Themes.Generated\n" +
                 "{\n" +
@@ -218,7 +218,7 @@ namespace Soenneker.Quark.Gen.Themes
 
         private static string GetFullyQualifiedName(INamedTypeSymbol classSymbol)
         {
-            var display = classSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+            string display = classSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
             return display.Replace("global::", string.Empty);
         }
 
@@ -230,7 +230,7 @@ namespace Soenneker.Quark.Gen.Themes
             if (attributeData.ConstructorArguments.Length > 0)
                 return attributeData.ConstructorArguments[0].Value as string;
 
-            foreach (var namedArgument in attributeData.NamedArguments)
+            foreach (KeyValuePair<string, TypedConstant> namedArgument in attributeData.NamedArguments)
             {
                 if (namedArgument.Key == "OutputFilePath" && namedArgument.Value.Value is string value)
                     return value;
@@ -244,7 +244,7 @@ namespace Soenneker.Quark.Gen.Themes
             var buildUnminified = true;
             var buildMinified = true;
 
-            foreach (var namedArgument in attributeData.NamedArguments)
+            foreach (KeyValuePair<string, TypedConstant> namedArgument in attributeData.NamedArguments)
             {
                 if (namedArgument.Key == "BuildUnminified" && namedArgument.Value.Value is bool u)
                     buildUnminified = u;

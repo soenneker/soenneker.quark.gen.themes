@@ -38,16 +38,16 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
     {
         try
         {
-            var map = ParseArgs(args);
+            Dictionary<string, string> map = ParseArgs(args);
 
-            if (!map.TryGetValue("--targetPath", out var targetPath) || string.IsNullOrWhiteSpace(targetPath))
+            if (!map.TryGetValue("--targetPath", out string? targetPath) || string.IsNullOrWhiteSpace(targetPath))
                 return Fail("Missing required --targetPath");
 
-            if (!map.TryGetValue("--projectDir", out var projectDir) || string.IsNullOrWhiteSpace(projectDir))
+            if (!map.TryGetValue("--projectDir", out string? projectDir) || string.IsNullOrWhiteSpace(projectDir))
                 return Fail("Missing required --projectDir");
 
-            var buildUnminified = ParseBool(map, "--buildUnminified", defaultValue: true);
-            var buildMinified = ParseBool(map, "--buildMinified", defaultValue: true);
+            bool buildUnminified = ParseBool(map, "--buildUnminified", defaultValue: true);
+            bool buildMinified = ParseBool(map, "--buildMinified", defaultValue: true);
 
             // When Windows cmd escapes the closing quote on projectDir, the rest of the args are swallowed
             // so --buildMinified may be missing from the map; we default to true, but log to diagnose.
@@ -66,31 +66,31 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
             if (!File.Exists(targetPath))
                 return Fail($"Target assembly not found: {targetPath}");
 
-            var targetDir = Path.GetDirectoryName(targetPath) ?? projectDir;
+            string targetDir = Path.GetDirectoryName(targetPath) ?? projectDir;
 
             var loadContext = new ProbingLoadContext(targetDir);
-            var asm = loadContext.LoadFromAssemblyPath(targetPath);
+            Assembly asm = loadContext.LoadFromAssemblyPath(targetPath);
 
             // Load referenced assemblies (e.g. Soenneker.Quark.Suite) into the same context so generator types are found
             LoadReferencedAssemblies(loadContext, targetDir, asm.GetReferencedAssemblies());
 
-            var manifest = ReadManifest(asm);
+            string? manifest = ReadManifest(asm);
 
             if (string.IsNullOrWhiteSpace(manifest))
                 return 0; // nothing to do
 
-            var componentsGen = FindLoadedType(loadContext, "Soenneker.Quark.ComponentsCssGenerator");
+            Type? componentsGen = FindLoadedType(loadContext, "Soenneker.Quark.ComponentsCssGenerator");
 
             if (componentsGen is null)
                 return Fail("Missing required type: Soenneker.Quark.ComponentsCssGenerator");
 
-            foreach (var entry in ParseManifest(manifest))
+            foreach (ManifestEntry entry in ParseManifest(manifest))
             {
-                var themeType = asm.GetType(entry.ThemeTypeName, throwOnError: false, ignoreCase: false);
+                Type? themeType = asm.GetType(entry.ThemeTypeName, throwOnError: false, ignoreCase: false);
                 if (themeType is null)
                     continue;
 
-                var factory = FindSingleThemeFactory(themeType);
+                MemberInfo? factory = FindSingleThemeFactory(themeType);
                 if (factory is null)
                     continue;
 
@@ -104,24 +104,24 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
                 if (themeInstance is null)
                     continue;
 
-                var css = GenerateCss(themeInstance, componentsGen);
+                string? css = GenerateCss(themeInstance, componentsGen);
                 if (css is null)
                     continue;
 
-                var outputPath = entry.OutputPath;
+                string outputPath = entry.OutputPath;
                 if (!Path.IsPathRooted(outputPath))
                     outputPath = Path.GetFullPath(Path.Combine(projectDir, outputPath));
 
                 // Two files: base.css (unminified) and base.min.css (minified). Write each only when its flag is true.
-                var unminifiedPath = GetBaseCssPath(outputPath);
-                var minifiedPath = GetMinifiedPath(unminifiedPath);
+                string unminifiedPath = GetBaseCssPath(outputPath);
+                string minifiedPath = GetMinifiedPath(unminifiedPath);
 
                 if (buildUnminified)
                     await AtomicWriteUtf8NoBom(unminifiedPath, css, cancellationToken);
 
                 if (buildMinified)
                 {
-                    var minifiedCss = _cssMinifier.Minify(css);
+                    string minifiedCss = _cssMinifier.Minify(css);
                     await AtomicWriteUtf8NoBom(minifiedPath, minifiedCss, cancellationToken);
                 }
             }
@@ -147,7 +147,7 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
     private static string SanitizePathArg(string value)
     {
         value = value.Trim();
-        var quoteIdx = value.IndexOf('"');
+        int quoteIdx = value.IndexOf('"');
         if (quoteIdx >= 0)
             value = value.Substring(0, quoteIdx);
         return value.Trim().Trim('"', '\\', ' ');
@@ -159,14 +159,14 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 
         for (var i = 0; i < args.Length; i++)
         {
-            var key = args[i];
+            string key = args[i];
             if (string.IsNullOrWhiteSpace(key) || key[0] != '-')
                 continue;
 
             if (i + 1 >= args.Length)
                 break;
 
-            var value = args[i + 1];
+            string value = args[i + 1];
             if (string.IsNullOrWhiteSpace(value) || value[0] == '-')
                 continue;
 
@@ -179,7 +179,7 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 
     private static bool ParseBool(IReadOnlyDictionary<string, string> map, string key, bool defaultValue)
     {
-        if (!map.TryGetValue(key, out var value) || string.IsNullOrWhiteSpace(value))
+        if (!map.TryGetValue(key, out string? value) || string.IsNullOrWhiteSpace(value))
             return defaultValue;
 
         value = value.Trim();
@@ -196,8 +196,8 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
     /// </summary>
     private static string GetBaseCssPath(string outputPath)
     {
-        var dir = Path.GetDirectoryName(outputPath) ?? ".";
-        var fileName = Path.GetFileName(outputPath);
+        string dir = Path.GetDirectoryName(outputPath) ?? ".";
+        string fileName = Path.GetFileName(outputPath);
         if (fileName.EndsWith(".min.css", StringComparison.OrdinalIgnoreCase))
             fileName = fileName.Substring(0, fileName.Length - 7) + ".css"; // .min.css -> .css
         return Path.Combine(dir, fileName);
@@ -208,24 +208,24 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
     /// </summary>
     private static string GetMinifiedPath(string baseCssPath)
     {
-        var dir = Path.GetDirectoryName(baseCssPath) ?? ".";
-        var fileName = Path.GetFileName(baseCssPath);
-        var lastDot = fileName.LastIndexOf('.');
+        string dir = Path.GetDirectoryName(baseCssPath) ?? ".";
+        string fileName = Path.GetFileName(baseCssPath);
+        int lastDot = fileName.LastIndexOf('.');
         if (lastDot <= 0)
             return Path.Combine(dir, fileName + ".min");
-        var nameWithoutExt = fileName.Substring(0, lastDot);
-        var ext = fileName.Substring(lastDot);
+        string nameWithoutExt = fileName.Substring(0, lastDot);
+        string ext = fileName.Substring(lastDot);
         return Path.Combine(dir, nameWithoutExt + ".min" + ext);
     }
 
     private static string? ReadManifest(Assembly asm)
     {
-        var type = asm.GetType(_manifestTypeName, throwOnError: false, ignoreCase: false);
+        Type? type = asm.GetType(_manifestTypeName, throwOnError: false, ignoreCase: false);
         if (type is null)
             return null;
 
         // const string Data => emits as a literal field
-        var field = type.GetField(_manifestFieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
+        FieldInfo? field = type.GetField(_manifestFieldName, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static);
         if (field?.FieldType == typeof(string))
             return field.GetRawConstantValue() as string;
 
@@ -234,15 +234,15 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 
     private static void LoadReferencedAssemblies(ProbingLoadContext context, string targetDir, IEnumerable<AssemblyName> refs)
     {
-        var frameworkDir = Path.Combine(targetDir, "wwwroot", "_framework");
+        string frameworkDir = Path.Combine(targetDir, "wwwroot", "_framework");
 
-        foreach (var refName in refs)
+        foreach (AssemblyName refName in refs)
         {
-            var name = refName.Name;
+            string? name = refName.Name;
             if (string.IsNullOrWhiteSpace(name))
                 continue;
 
-            var candidate = Path.Combine(targetDir, name + ".dll");
+            string candidate = Path.Combine(targetDir, name + ".dll");
             if (File.Exists(candidate))
             {
                 try { context.LoadFromAssemblyPath(candidate); } catch { /* ignore */ }
@@ -259,11 +259,11 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 
     private static Type? FindLoadedType(AssemblyLoadContext context, string fullName)
     {
-        foreach (var a in context.Assemblies)
+        foreach (Assembly a in context.Assemblies)
         {
             try
             {
-                var t = a.GetType(fullName, throwOnError: false, ignoreCase: false);
+                Type? t = a.GetType(fullName, throwOnError: false, ignoreCase: false);
                 if (t is not null)
                     return t;
             }
@@ -280,7 +280,7 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
     {
         MemberInfo? match = null;
 
-        foreach (var prop in themeClass.GetProperties(BindingFlags.Public | BindingFlags.Static))
+        foreach (PropertyInfo prop in themeClass.GetProperties(BindingFlags.Public | BindingFlags.Static))
         {
             if (prop.GetMethod is null)
                 continue;
@@ -294,7 +294,7 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
             match = prop;
         }
 
-        foreach (var method in themeClass.GetMethods(BindingFlags.Public | BindingFlags.Static))
+        foreach (MethodInfo method in themeClass.GetMethods(BindingFlags.Public | BindingFlags.Static))
         {
             if (!IsThemeFactoryMethod(method))
                 continue;
@@ -316,7 +316,7 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 
     private static bool IsThemeFactoryMethod(MethodInfo method)
     {
-        var parameters = method.GetParameters();
+        ParameterInfo[] parameters = method.GetParameters();
         if (parameters.Length == 0)
             return true;
 
@@ -328,7 +328,7 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 
     private static object? InvokeThemeFactory(MethodInfo method, IServiceProvider services)
     {
-        var parameters = method.GetParameters();
+        ParameterInfo[] parameters = method.GetParameters();
         if (parameters.Length == 0)
             return method.Invoke(null, null);
 
@@ -340,8 +340,8 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 
     private static string? GenerateCss(object themeInstance, Type componentsGeneratorType)
     {
-        var themeType = themeInstance.GetType();
-        var componentsMethod = FindSingleArgMethod(componentsGeneratorType, "Generate", themeType);
+        Type themeType = themeInstance.GetType();
+        MethodInfo? componentsMethod = FindSingleArgMethod(componentsGeneratorType, "Generate", themeType);
         if (componentsMethod is null)
             return null;
 
@@ -351,12 +351,12 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 
     private static MethodInfo? FindSingleArgMethod(Type type, string name, Type argType)
     {
-        foreach (var m in type.GetMethods(BindingFlags.Public | BindingFlags.Static))
+        foreach (MethodInfo m in type.GetMethods(BindingFlags.Public | BindingFlags.Static))
         {
             if (!string.Equals(m.Name, name, StringComparison.Ordinal))
                 continue;
 
-            var ps = m.GetParameters();
+            ParameterInfo[] ps = m.GetParameters();
             if (ps.Length != 1)
                 continue;
 
@@ -371,29 +371,29 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
     private static IEnumerable<ManifestEntry> ParseManifest(string data)
     {
         // Each line: ThemeTypeName|OutputPath|BuildUnminified|BuildMinified (or legacy: ThemeTypeName|OutputPath|MinifyCss)
-        var lines = data.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+        string[] lines = data.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
         for (var i = 0; i < lines.Length; i++)
         {
-            var line = lines[i];
-            var firstSep = line.IndexOf('|');
+            string line = lines[i];
+            int firstSep = line.IndexOf('|');
             if (firstSep <= 0 || firstSep >= line.Length - 1)
                 continue;
 
-            var secondSep = line.IndexOf('|', firstSep + 1);
-            var typeName = line.Substring(0, firstSep).Trim();
-            var path = (secondSep == -1 ? line.Substring(firstSep + 1) : line.Substring(firstSep + 1, secondSep - firstSep - 1)).Trim();
+            int secondSep = line.IndexOf('|', firstSep + 1);
+            string typeName = line.Substring(0, firstSep).Trim();
+            string path = (secondSep == -1 ? line.Substring(firstSep + 1) : line.Substring(firstSep + 1, secondSep - firstSep - 1)).Trim();
             var buildUnminified = true;
             var buildMinified = true;
 
             if (secondSep != -1 && secondSep < line.Length - 1)
             {
-                var rest = line.Substring(secondSep + 1);
-                var thirdSep = rest.IndexOf('|');
+                string rest = line.Substring(secondSep + 1);
+                int thirdSep = rest.IndexOf('|');
                 if (thirdSep >= 0)
                 {
-                    var u = ParseManifestBool(rest.Substring(0, thirdSep));
-                    var m = ParseManifestBool(thirdSep + 1 < rest.Length ? rest.Substring(thirdSep + 1) : "");
+                    bool? u = ParseManifestBool(rest.Substring(0, thirdSep));
+                    bool? m = ParseManifestBool(thirdSep + 1 < rest.Length ? rest.Substring(thirdSep + 1) : "");
                     buildUnminified = u ?? true;
                     buildMinified = m ?? true;
                 }
@@ -420,18 +420,18 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 
     private async ValueTask AtomicWriteUtf8NoBom(string path, string content, CancellationToken cancellationToken)
     {
-        var dir = Path.GetDirectoryName(path);
+        string? dir = Path.GetDirectoryName(path);
 
         await _directoryUtil.CreateIfDoesNotExist(dir, true, cancellationToken).NoSync();
 
         if (File.Exists(path))
         {
-            var existing = File.ReadAllText(path);
+            string existing = File.ReadAllText(path);
             if (string.Equals(existing, content, StringComparison.Ordinal))
                 return;
         }
 
-        var tmp = path + ".tmp";
+        string tmp = path + ".tmp";
         File.WriteAllText(tmp, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
         await _fileUtil.Move(tmp, path, cancellationToken: cancellationToken).NoSync();

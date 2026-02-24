@@ -23,7 +23,7 @@ internal sealed class ProbingLoadContext : AssemblyLoadContext
 
     protected override Assembly? Load(AssemblyName assemblyName)
     {
-        var name = assemblyName.Name;
+        string? name = assemblyName.Name;
         if (string.IsNullOrWhiteSpace(name))
             return null;
 
@@ -39,7 +39,7 @@ internal sealed class ProbingLoadContext : AssemblyLoadContext
             }
         }
 
-        var candidate = Path.Combine(_targetDir, name + ".dll");
+        string candidate = Path.Combine(_targetDir, name + ".dll");
         if (File.Exists(candidate))
             return LoadFromAssemblyPath(candidate);
 
