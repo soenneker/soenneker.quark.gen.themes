@@ -11,6 +11,7 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
 using System.Threading;
+using Soenneker.Extensions.String;
 using System.Threading.Tasks;
 
 namespace Soenneker.Quark.Gen.Themes.BuildTasks;
@@ -72,11 +73,11 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
             Assembly asm = loadContext.LoadFromAssemblyPath(targetPath);
 
             // Load referenced assemblies (e.g. Soenneker.Quark.Suite) into the same context so generator types are found
-            LoadReferencedAssemblies(loadContext, targetDir, asm.GetReferencedAssemblies());
+            await LoadReferencedAssemblies(loadContext, targetDir, asm.GetReferencedAssemblies(), cancellationToken);
 
             string? manifest = ReadManifest(asm);
 
-            if (string.IsNullOrWhiteSpace(manifest))
+            if (manifest.IsNullOrWhiteSpace())
                 return 0; // nothing to do
 
             Type? componentsGen = FindLoadedType(loadContext, "Soenneker.Quark.ComponentsCssGenerator");
@@ -232,25 +233,27 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
         return null;
     }
 
-    private static void LoadReferencedAssemblies(ProbingLoadContext context, string targetDir, IEnumerable<AssemblyName> refs)
+    private async ValueTask LoadReferencedAssemblies(ProbingLoadContext context, string targetDir, IEnumerable<AssemblyName> refs, CancellationToken cancellationToken)
     {
         string frameworkDir = Path.Combine(targetDir, "wwwroot", "_framework");
 
         foreach (AssemblyName refName in refs)
         {
             string? name = refName.Name;
-            if (string.IsNullOrWhiteSpace(name))
+            if (name.IsNullOrWhiteSpace())
                 continue;
 
             string candidate = Path.Combine(targetDir, name + ".dll");
-            if (File.Exists(candidate))
+
+            if (await _fileUtil.Exists(candidate, cancellationToken).NoSync())
             {
                 try { context.LoadFromAssemblyPath(candidate); } catch { /* ignore */ }
                 continue;
             }
 
             candidate = Path.Combine(frameworkDir, name + ".dll");
-            if (File.Exists(candidate))
+
+            if (await _fileUtil.Exists(candidate, cancellationToken).NoSync())
             {
                 try { context.LoadFromAssemblyPath(candidate); } catch { /* ignore */ }
             }
@@ -422,17 +425,17 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
     {
         string? dir = Path.GetDirectoryName(path);
 
-        await _directoryUtil.CreateIfDoesNotExist(dir, true, cancellationToken).NoSync();
+        await _directoryUtil.Create(dir, true, cancellationToken).NoSync();
 
         if (File.Exists(path))
         {
-            string existing = File.ReadAllText(path);
+            string existing = await File.ReadAllTextAsync(path, cancellationToken);
             if (string.Equals(existing, content, StringComparison.Ordinal))
                 return;
         }
 
         string tmp = path + ".tmp";
-        File.WriteAllText(tmp, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        await File.WriteAllTextAsync(tmp, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), cancellationToken);
 
         await _fileUtil.Move(tmp, path, cancellationToken: cancellationToken).NoSync();
     }
