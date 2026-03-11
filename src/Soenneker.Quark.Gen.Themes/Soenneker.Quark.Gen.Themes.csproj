@@ -52,8 +52,7 @@
         <None Include="Soenneker.Quark.Gen.Themes.targets" Pack="true" PackagePath="build\" />
         <None Include="Soenneker.Quark.Gen.Themes.targets" Pack="true" PackagePath="buildTransitive\" />
 
-        <None Include="..\Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\**\*.*"
-              Pack="true" PackagePath="buildTransitive\%(RecursiveDir)" />
+        <None Include="..\Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\**\*.*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)" />
     </ItemGroup>
 
     <ItemGroup>
@@ -62,19 +61,17 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.0.0" PrivateAssets="all" />
+        <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="5.3.0">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.3.0" PrivateAssets="all" />
     </ItemGroup>
 
-    <Target Name="BuildBuildTasksTool"
-            BeforeTargets="Pack"
-            Condition="'$(IsPackable)' == 'true'">
+    <Target Name="BuildBuildTasksTool" BeforeTargets="Pack" Condition="'$(IsPackable)' == 'true'">
 
-        <MSBuild Projects="..\Soenneker.Quark.Gen.Themes.BuildTasks\Soenneker.Quark.Gen.Themes.BuildTasks.csproj"
-                 Targets="Build"
-                 Properties="Configuration=$(Configuration);NoBuild=false"
-                 BuildInParallel="true" />
+        <MSBuild Projects="..\Soenneker.Quark.Gen.Themes.BuildTasks\Soenneker.Quark.Gen.Themes.BuildTasks.csproj" Targets="Build" Properties="Configuration=$(Configuration);NoBuild=false" BuildInParallel="true" />
 
-        <Error Condition="!Exists('..\Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Themes.BuildTasks.dll')"
-               Text="BuildTasks output missing. Aborting pack to avoid publishing a broken package." />
+        <Error Condition="!Exists('..\Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Themes.BuildTasks.dll')" Text="BuildTasks output missing. Aborting pack to avoid publishing a broken package." />
     </Target>
 </Project>
