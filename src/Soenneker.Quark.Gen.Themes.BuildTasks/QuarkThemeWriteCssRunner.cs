@@ -58,8 +58,10 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
             // When Windows cmd escapes the closing quote on projectDir, the rest of the args are swallowed
             // so --buildMinified may be missing from the map; we default to true, but log to diagnose.
             if (!map.ContainsKey("--buildUnminified") || !map.ContainsKey("--buildMinified"))
-                Console.Error.WriteLine("[QuarkTheme] buildUnminified={0} buildMinified={1} (some args may have been swallowed by shell quoting)",
-                    buildUnminified, buildMinified);
+                _logger.LogWarning(
+                    "buildUnminified={BuildUnminified} buildMinified={BuildMinified} (some args may have been swallowed by shell quoting)",
+                    buildUnminified,
+                    buildMinified);
 
             if (!buildUnminified && !buildMinified)
                 return 0; // nothing to write
@@ -174,7 +176,7 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
         }
     }
 
-    private static int Fail(string message)
+    private int Fail(string message)
     {
         Console.Error.WriteLine(message);
         return 1;

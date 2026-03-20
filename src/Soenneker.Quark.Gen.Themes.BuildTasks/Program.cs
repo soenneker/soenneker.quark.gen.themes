@@ -24,7 +24,7 @@ public sealed class Program
         }
         catch (Exception e)
         {
-            Console.Error.WriteLine($"Stopped program because of exception: {e}");
+            await Console.Error.WriteLineAsync($"Stopped program because of exception: {e}");
             throw;
         }
         finally
@@ -53,6 +53,7 @@ public sealed class Program
                 // Avoid EventLog provider dependency in build task execution
                 logging.ClearProviders();
                 logging.AddConsole();
+                logging.SetMinimumLevel(LogLevel.Trace);
             })
             .ConfigureServices((_, services) =>
             {
@@ -68,4 +69,5 @@ public sealed class Program
         eventArgs.Cancel = true; // Prevents immediate termination
         _cts?.Cancel();
     }
+
 }
