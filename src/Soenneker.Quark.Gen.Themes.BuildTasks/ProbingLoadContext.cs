@@ -31,7 +31,7 @@ internal sealed class ProbingLoadContext : AssemblyLoadContext
         {
             try
             {
-                return AssemblyLoadContext.Default.LoadFromAssemblyName(assemblyName);
+                return Default.LoadFromAssemblyName(assemblyName);
             }
             catch
             {

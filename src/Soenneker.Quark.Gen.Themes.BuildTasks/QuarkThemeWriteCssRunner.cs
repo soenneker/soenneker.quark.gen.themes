@@ -151,7 +151,8 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
         int quoteIdx = value.IndexOf('"');
         if (quoteIdx >= 0)
             value = value.Substring(0, quoteIdx);
-        return value.Trim().Trim('"', '\\', ' ');
+        return value.Trim()
+                    .Trim('"', '\\', ' ');
     }
 
     private static Dictionary<string, string> ParseArgs(string[] args)
@@ -233,7 +234,8 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
         return null;
     }
 
-    private async ValueTask LoadReferencedAssemblies(ProbingLoadContext context, string targetDir, IEnumerable<AssemblyName> refs, CancellationToken cancellationToken)
+    private async ValueTask LoadReferencedAssemblies(ProbingLoadContext context, string targetDir, IEnumerable<AssemblyName> refs,
+        CancellationToken cancellationToken)
     {
         string frameworkDir = Path.Combine(targetDir, "wwwroot", "_framework");
 
@@ -245,17 +247,34 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 
             string candidate = Path.Combine(targetDir, name + ".dll");
 
-            if (await _fileUtil.Exists(candidate, cancellationToken).NoSync())
+            if (await _fileUtil.Exists(candidate, cancellationToken)
+                               .NoSync())
             {
-                try { context.LoadFromAssemblyPath(candidate); } catch { /* ignore */ }
+                try
+                {
+                    context.LoadFromAssemblyPath(candidate);
+                }
+                catch
+                {
+                    /* ignore */
+                }
+
                 continue;
             }
 
             candidate = Path.Combine(frameworkDir, name + ".dll");
 
-            if (await _fileUtil.Exists(candidate, cancellationToken).NoSync())
+            if (await _fileUtil.Exists(candidate, cancellationToken)
+                               .NoSync())
             {
-                try { context.LoadFromAssemblyPath(candidate); } catch { /* ignore */ }
+                try
+                {
+                    context.LoadFromAssemblyPath(candidate);
+                }
+                catch
+                {
+                    /* ignore */
+                }
             }
         }
     }
@@ -363,7 +382,8 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
             if (ps.Length != 1)
                 continue;
 
-            if (ps[0].ParameterType.IsAssignableFrom(argType))
+            if (ps[0]
+                .ParameterType.IsAssignableFrom(argType))
                 return m;
         }
 
@@ -384,7 +404,8 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
                 continue;
 
             int secondSep = line.IndexOf('|', firstSep + 1);
-            string typeName = line.Substring(0, firstSep).Trim();
+            string typeName = line.Substring(0, firstSep)
+                                  .Trim();
             string path = (secondSep == -1 ? line.Substring(firstSep + 1) : line.Substring(firstSep + 1, secondSep - firstSep - 1)).Trim();
             var buildUnminified = true;
             var buildMinified = true;
@@ -425,7 +446,8 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
     {
         string? dir = Path.GetDirectoryName(path);
 
-        await _directoryUtil.Create(dir, true, cancellationToken).NoSync();
+        await _directoryUtil.Create(dir, true, cancellationToken)
+                            .NoSync();
 
         if (File.Exists(path))
         {
@@ -437,6 +459,7 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
         string tmp = path + ".tmp";
         await File.WriteAllTextAsync(tmp, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), cancellationToken);
 
-        await _fileUtil.Move(tmp, path, cancellationToken: cancellationToken).NoSync();
+        await _fileUtil.Move(tmp, path, cancellationToken: cancellationToken)
+                       .NoSync();
     }
 }
