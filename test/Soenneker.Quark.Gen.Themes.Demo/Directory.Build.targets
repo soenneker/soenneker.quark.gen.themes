@@ -1,12 +1,17 @@
 <Project>
   <!-- When using ProjectReference (not the NuGet package), import targets from src and point to BuildTasks output -->
-  <PropertyGroup Condition="Exists('$(MSBuildThisFileDirectory)..\..\src\Soenneker.Quark.Gen.Themes\Soenneker.Quark.Gen.Themes.targets')">
-    <QuarkThemeBuildTasksDllPath>$(MSBuildThisFileDirectory)..\..\src\Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Themes.BuildTasks.dll</QuarkThemeBuildTasksDllPath>
+  <PropertyGroup>
+    <_QuarkThemeTargetsPath>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'src', 'Soenneker.Quark.Gen.Themes', 'Soenneker.Quark.Gen.Themes.targets'))))</_QuarkThemeTargetsPath>
+    <_QuarkThemeBuildTasksProjectPath>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'src', 'Soenneker.Quark.Gen.Themes.BuildTasks', 'Soenneker.Quark.Gen.Themes.BuildTasks.csproj'))))</_QuarkThemeBuildTasksProjectPath>
+    <_QuarkThemeBuildTasksDllPath>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', '..', 'src', 'Soenneker.Quark.Gen.Themes.BuildTasks', 'bin', '$(Configuration)', 'Soenneker.Quark.Gen.Themes.BuildTasks.dll'))))</_QuarkThemeBuildTasksDllPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="Exists('$(_QuarkThemeTargetsPath)')">
+    <QuarkThemeBuildTasksDllPath>$(_QuarkThemeBuildTasksDllPath)</QuarkThemeBuildTasksDllPath>
   </PropertyGroup>
   <!-- Ensure BuildTasks is built before WriteQuarkThemeCss runs (cannot use ProjectReference: exe vs Blazor) -->
-  <Target Name="BuildQuarkThemeBuildTasks" BeforeTargets="Build" Condition="Exists('$(MSBuildThisFileDirectory)..\..\src\Soenneker.Quark.Gen.Themes.BuildTasks\Soenneker.Quark.Gen.Themes.BuildTasks.csproj')">
-    <MSBuild Projects="$(MSBuildThisFileDirectory)..\..\src\Soenneker.Quark.Gen.Themes.BuildTasks\Soenneker.Quark.Gen.Themes.BuildTasks.csproj" Targets="Build" Properties="Configuration=$(Configuration)" />
+  <Target Name="BuildQuarkThemeBuildTasks" BeforeTargets="Build" Condition="Exists('$(_QuarkThemeBuildTasksProjectPath)')">
+    <MSBuild Projects="$(_QuarkThemeBuildTasksProjectPath)" Targets="Build" Properties="Configuration=$(Configuration)" />
   </Target>
-  <Import Project="$(MSBuildThisFileDirectory)..\..\src\Soenneker.Quark.Gen.Themes\Soenneker.Quark.Gen.Themes.targets"
-          Condition="Exists('$(MSBuildThisFileDirectory)..\..\src\Soenneker.Quark.Gen.Themes\Soenneker.Quark.Gen.Themes.targets')" />
+  <Import Project="$(_QuarkThemeTargetsPath)"
+          Condition="Exists('$(_QuarkThemeTargetsPath)')" />
 </Project>

@@ -40,6 +40,9 @@
         <PackageReadmeFile>README.md</PackageReadmeFile>
         <PackageIcon>icon.png</PackageIcon>
         <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+        <_QuarkThemeBuildTasksProjectPath>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '..', 'Soenneker.Quark.Gen.Themes.BuildTasks', 'Soenneker.Quark.Gen.Themes.BuildTasks.csproj'))))</_QuarkThemeBuildTasksProjectPath>
+        <_QuarkThemeBuildTasksOutputDir>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '..', 'Soenneker.Quark.Gen.Themes.BuildTasks', 'bin', '$(Configuration)'))))</_QuarkThemeBuildTasksOutputDir>
+        <_QuarkThemeBuildTasksDllPath>$([System.IO.Path]::Combine('$(_QuarkThemeBuildTasksOutputDir)', 'Soenneker.Quark.Gen.Themes.BuildTasks.dll'))</_QuarkThemeBuildTasksDllPath>
     </PropertyGroup>
 
     <ItemGroup>
@@ -49,10 +52,10 @@
     </ItemGroup>
 
     <ItemGroup>
-        <None Include="Soenneker.Quark.Gen.Themes.targets" Pack="true" PackagePath="build\" />
-        <None Include="Soenneker.Quark.Gen.Themes.targets" Pack="true" PackagePath="buildTransitive\" />
+        <None Include="Soenneker.Quark.Gen.Themes.targets" Pack="true" PackagePath="build/" />
+        <None Include="Soenneker.Quark.Gen.Themes.targets" Pack="true" PackagePath="buildTransitive/" />
 
-        <None Include="..\Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\**\*.*" Pack="true" PackagePath="buildTransitive\%(RecursiveDir)" />
+        <None Include="$([MSBuild]::EnsureTrailingSlash('$(_QuarkThemeBuildTasksOutputDir)'))**/*.*" Pack="true" PackagePath="buildTransitive/%(RecursiveDir)" />
     </ItemGroup>
 
     <ItemGroup>
@@ -70,8 +73,8 @@
 
     <Target Name="BuildBuildTasksTool" BeforeTargets="Pack" Condition="'$(IsPackable)' == 'true'">
 
-        <MSBuild Projects="..\Soenneker.Quark.Gen.Themes.BuildTasks\Soenneker.Quark.Gen.Themes.BuildTasks.csproj" Targets="Build" Properties="Configuration=$(Configuration);NoBuild=false" BuildInParallel="true" />
+        <MSBuild Projects="$(_QuarkThemeBuildTasksProjectPath)" Targets="Build" Properties="Configuration=$(Configuration);NoBuild=false" BuildInParallel="true" />
 
-        <Error Condition="!Exists('..\Soenneker.Quark.Gen.Themes.BuildTasks\bin\$(Configuration)\Soenneker.Quark.Gen.Themes.BuildTasks.dll')" Text="BuildTasks output missing. Aborting pack to avoid publishing a broken package." />
+        <Error Condition="!Exists('$(_QuarkThemeBuildTasksDllPath)')" Text="BuildTasks output missing. Aborting pack to avoid publishing a broken package." />
     </Target>
 </Project>

@@ -7,11 +7,10 @@
 
     <PropertyGroup>
         <!-- Package-scoped properties (QuarkTheme*) so this package never shares MSBuild state with other Soenneker.Quark.Gen.* BuildTasks packages. -->
-        <_QuarkThemeBuildTasksDir Condition="Exists('$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Themes.BuildTasks.dll')">$(MSBuildThisFileDirectory)</_QuarkThemeBuildTasksDir>
-
-        <_QuarkThemeBuildTasksDir Condition="'$(_QuarkThemeBuildTasksDir)'=='' and Exists('$(MSBuildThisFileDirectory)..\buildTransitive\Soenneker.Quark.Gen.Themes.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\buildTransitive\</_QuarkThemeBuildTasksDir>
-
-        <QuarkThemeBuildTasksDllPath Condition="'$(QuarkThemeBuildTasksDllPath)'=='' and '$(_QuarkThemeBuildTasksDir)'!=''">$(_QuarkThemeBuildTasksDir)Soenneker.Quark.Gen.Themes.BuildTasks.dll</QuarkThemeBuildTasksDllPath>
+        <_QuarkThemeBuildTasksDllFromPackage>$([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', 'Soenneker.Quark.Gen.Themes.BuildTasks.dll'))</_QuarkThemeBuildTasksDllFromPackage>
+        <_QuarkThemeBuildTasksDllFromBuildTransitive>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildThisFileDirectory)', '..', 'buildTransitive', 'Soenneker.Quark.Gen.Themes.BuildTasks.dll'))))</_QuarkThemeBuildTasksDllFromBuildTransitive>
+        <QuarkThemeBuildTasksDllPath Condition="'$(QuarkThemeBuildTasksDllPath)'=='' and Exists('$(_QuarkThemeBuildTasksDllFromPackage)')">$(_QuarkThemeBuildTasksDllFromPackage)</QuarkThemeBuildTasksDllPath>
+        <QuarkThemeBuildTasksDllPath Condition="'$(QuarkThemeBuildTasksDllPath)'=='' and Exists('$(_QuarkThemeBuildTasksDllFromBuildTransitive)')">$(_QuarkThemeBuildTasksDllFromBuildTransitive)</QuarkThemeBuildTasksDllPath>
         <!-- Backward compatibility: legacy property can still be set by consumers. -->
         <QuarkThemeBuildTasksDllPath Condition="'$(QuarkThemeBuildTasksDllPath)'=='' and '$(QuarkThemeBuildTasksDll)'!=''">$(QuarkThemeBuildTasksDll)</QuarkThemeBuildTasksDllPath>
 
