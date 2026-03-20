@@ -33,12 +33,11 @@ public sealed class ConsoleHostedService : IHostedService
         {
             Task.Run(async () =>
             {
-                _logger.LogInformation("Running console hosted service ...");
+                _logger.LogInformation("Starting Soenneker.Quark.Gen.Themes.BuildTasks...");
 
                 try
                 {
                     _exitCode = await _runner.Run(_commandLineArgs.Args, cancellationToken).AsTask();
-                    _logger.LogInformation("Complete!");
                 }
                 catch (Exception e)
                 {
@@ -62,10 +61,9 @@ public sealed class ConsoleHostedService : IHostedService
 
     public Task StopAsync(CancellationToken cancellationToken)
     {
-        _logger.LogDebug("Exiting with return code: {exitCode}", _exitCode);
-
         // Exit code may be null if the user cancelled via Ctrl+C/SIGTERM
         Environment.ExitCode = _exitCode.GetValueOrDefault(-1);
+        _logger.LogInformation("Stopping Soenneker.Quark.Gen.Themes.BuildTasks with exit code {ExitCode}.", Environment.ExitCode);
         return Task.CompletedTask;
     }
 }

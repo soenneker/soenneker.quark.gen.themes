@@ -7,12 +7,14 @@ using Soenneker.Utils.File.Abstract;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.Loader;
 using System.Text;
 using System.Threading;
 using Soenneker.Extensions.String;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace Soenneker.Quark.Gen.Themes.BuildTasks;
 
@@ -23,13 +25,16 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
     private const string _manifestFieldName = "Data";
 
     private readonly ICssMinifier _cssMinifier;
+    private readonly ILogger<QuarkThemeWriteCssRunner> _logger;
     private readonly IFileUtil _fileUtil;
     private readonly IDirectoryUtil _directoryUtil;
     private readonly IServiceProvider _services;
 
-    public QuarkThemeWriteCssRunner(ICssMinifier cssMinifier, IFileUtil fileUtil, IDirectoryUtil directoryUtil, IServiceProvider services)
+    public QuarkThemeWriteCssRunner(ICssMinifier cssMinifier, ILogger<QuarkThemeWriteCssRunner> logger, IFileUtil fileUtil,
+        IDirectoryUtil directoryUtil, IServiceProvider services)
     {
         _cssMinifier = cssMinifier;
+        _logger = logger;
         _fileUtil = fileUtil;
         _directoryUtil = directoryUtil;
         _services = services;
@@ -64,36 +69,58 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
             targetPath = Path.GetFullPath(targetPath);
             projectDir = Path.GetFullPath(projectDir);
 
+            _logger.LogInformation("Starting theme CSS generation for project {ProjectDir}.", projectDir);
+            _logger.LogInformation(
+                "Theme CSS generation target assembly: {TargetPath} (buildUnminified={BuildUnminified}, buildMinified={BuildMinified}).",
+                targetPath,
+                buildUnminified,
+                buildMinified);
+
             if (!File.Exists(targetPath))
                 return Fail($"Target assembly not found: {targetPath}");
 
             string targetDir = Path.GetDirectoryName(targetPath) ?? projectDir;
 
+            _logger.LogInformation("Loading target assembly from {TargetDir}.", targetDir);
             var loadContext = new ProbingLoadContext(targetDir);
             Assembly asm = loadContext.LoadFromAssemblyPath(targetPath);
 
             // Load referenced assemblies (e.g. Soenneker.Quark.Suite) into the same context so generator types are found
+            _logger.LogInformation("Loading referenced assemblies for theme generation...");
             await LoadReferencedAssemblies(loadContext, targetDir, asm.GetReferencedAssemblies(), cancellationToken);
 
+            _logger.LogInformation("Reading embedded theme manifest...");
             string? manifest = ReadManifest(asm);
 
             if (manifest.IsNullOrWhiteSpace())
+            {
+                _logger.LogInformation("No theme manifest entries were found. Nothing to generate.");
                 return 0; // nothing to do
+            }
 
             Type? componentsGen = FindLoadedType(loadContext, "Soenneker.Quark.ComponentsCssGenerator");
 
             if (componentsGen is null)
                 return Fail("Missing required type: Soenneker.Quark.ComponentsCssGenerator");
 
-            foreach (ManifestEntry entry in ParseManifest(manifest))
+            List<ManifestEntry> entries = ParseManifest(manifest).ToList();
+            _logger.LogInformation("Processing {EntryCount} theme manifest entries.", entries.Count);
+
+            foreach (ManifestEntry entry in entries)
             {
                 Type? themeType = asm.GetType(entry.ThemeTypeName, throwOnError: false, ignoreCase: false);
                 if (themeType is null)
+                {
+                    _logger.LogWarning("Skipping theme entry because type {ThemeTypeName} could not be found.", entry.ThemeTypeName);
                     continue;
+                }
 
                 MemberInfo? factory = FindSingleThemeFactory(themeType);
                 if (factory is null)
+                {
+                    _logger.LogWarning("Skipping theme entry {ThemeTypeName} because no unique theme factory was found.", entry.ThemeTypeName);
                     continue;
+                }
 
                 object? themeInstance = factory switch
                 {
@@ -103,11 +130,17 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
                 };
 
                 if (themeInstance is null)
+                {
+                    _logger.LogWarning("Skipping theme entry {ThemeTypeName} because the factory returned null.", entry.ThemeTypeName);
                     continue;
+                }
 
                 string? css = GenerateCss(themeInstance, componentsGen);
                 if (css is null)
+                {
+                    _logger.LogWarning("Skipping theme entry {ThemeTypeName} because CSS generation returned no content.", entry.ThemeTypeName);
                     continue;
+                }
 
                 string outputPath = entry.OutputPath;
                 if (!Path.IsPathRooted(outputPath))
@@ -118,15 +151,20 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
                 string minifiedPath = GetMinifiedPath(unminifiedPath);
 
                 if (buildUnminified)
+                {
+                    _logger.LogInformation("Writing unminified theme CSS for {ThemeTypeName} to {OutputPath}.", entry.ThemeTypeName, unminifiedPath);
                     await AtomicWriteUtf8NoBom(unminifiedPath, css, cancellationToken);
+                }
 
                 if (buildMinified)
                 {
+                    _logger.LogInformation("Writing minified theme CSS for {ThemeTypeName} to {OutputPath}.", entry.ThemeTypeName, minifiedPath);
                     string minifiedCss = _cssMinifier.Minify(css);
                     await AtomicWriteUtf8NoBom(minifiedPath, minifiedCss, cancellationToken);
                 }
             }
 
+            _logger.LogInformation("Completed theme CSS generation for project {ProjectDir}.", projectDir);
             return 0;
         }
         catch (Exception ex)
@@ -445,6 +483,11 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
     private async ValueTask AtomicWriteUtf8NoBom(string path, string content, CancellationToken cancellationToken)
     {
         string? dir = Path.GetDirectoryName(path);
+
+        if (dir.IsNullOrWhiteSpace())
+        {
+            dir = _directoryUtil.GetWorkingDirectory();
+        }
 
         await _directoryUtil.Create(dir, true, cancellationToken)
                             .NoSync();
