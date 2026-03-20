@@ -6,11 +6,14 @@
     </Target>
 
     <PropertyGroup>
+        <!-- Package-scoped properties (QuarkTheme*) so this package never shares MSBuild state with other Soenneker.Quark.Gen.* BuildTasks packages. -->
         <_QuarkThemeBuildTasksDir Condition="Exists('$(MSBuildThisFileDirectory)Soenneker.Quark.Gen.Themes.BuildTasks.dll')">$(MSBuildThisFileDirectory)</_QuarkThemeBuildTasksDir>
 
         <_QuarkThemeBuildTasksDir Condition="'$(_QuarkThemeBuildTasksDir)'=='' and Exists('$(MSBuildThisFileDirectory)..\buildTransitive\Soenneker.Quark.Gen.Themes.BuildTasks.dll')">$(MSBuildThisFileDirectory)..\buildTransitive\</_QuarkThemeBuildTasksDir>
 
-        <QuarkThemeBuildTasksDll Condition="'$(QuarkThemeBuildTasksDll)'=='' and '$(_QuarkThemeBuildTasksDir)'!=''">$(_QuarkThemeBuildTasksDir)Soenneker.Quark.Gen.Themes.BuildTasks.dll</QuarkThemeBuildTasksDll>
+        <QuarkThemeBuildTasksDllPath Condition="'$(QuarkThemeBuildTasksDllPath)'=='' and '$(_QuarkThemeBuildTasksDir)'!=''">$(_QuarkThemeBuildTasksDir)Soenneker.Quark.Gen.Themes.BuildTasks.dll</QuarkThemeBuildTasksDllPath>
+        <!-- Backward compatibility: legacy property can still be set by consumers. -->
+        <QuarkThemeBuildTasksDllPath Condition="'$(QuarkThemeBuildTasksDllPath)'=='' and '$(QuarkThemeBuildTasksDll)'!=''">$(QuarkThemeBuildTasksDll)</QuarkThemeBuildTasksDllPath>
 
         <!-- Set to true to emit unminified CSS; false to skip. Can be used together with QuarkThemeBuildMinified. -->
         <QuarkThemeBuildUnminified Condition="'$(QuarkThemeBuildUnminified)'==''">true</QuarkThemeBuildUnminified>
@@ -26,13 +29,13 @@
         <Message Importance="high" Text="🔥 WriteQuarkThemeCss running" />
         <Message Importance="high" Text="TargetPath=$(TargetPath) Exists=$([System.IO.File]::Exists('$(TargetPath)'))" />
         <Message Importance="high" Text="ProjectDir=$(ProjectDir)" />
-        <Message Importance="high" Text="QuarkThemeBuildTasksDll=$(QuarkThemeBuildTasksDll) Exists=$([System.IO.File]::Exists('$(QuarkThemeBuildTasksDll)'))" />
+        <Message Importance="high" Text="QuarkThemeBuildTasksDllPath=$(QuarkThemeBuildTasksDllPath) Exists=$([System.IO.File]::Exists('$(QuarkThemeBuildTasksDllPath)'))" />
 
-        <Error Condition="'$(QuarkThemeBuildTasksDll)'==''"
-               Text="QuarkThemeBuildTasksDll was not resolved (empty). MSBuildThisFileDirectory=$(MSBuildThisFileDirectory)" />
+        <Error Condition="'$(QuarkThemeBuildTasksDllPath)'==''"
+               Text="QuarkThemeBuildTasksDllPath was not resolved (empty). MSBuildThisFileDirectory=$(MSBuildThisFileDirectory)" />
 
-        <Error Condition="!Exists('$(QuarkThemeBuildTasksDll)')"
-               Text="QuarkThemeBuildTasksDll not found at '$(QuarkThemeBuildTasksDll)'." />
+        <Error Condition="!Exists('$(QuarkThemeBuildTasksDllPath)')"
+               Text="QuarkThemeBuildTasksDllPath not found at '$(QuarkThemeBuildTasksDllPath)'." />
 
         <Error Condition="!Exists('$(TargetPath)')"
                Text="TargetPath does not exist: '$(TargetPath)'." />
@@ -43,7 +46,7 @@
           ConsoleToMSBuild="true"
           StandardOutputImportance="high"
           StandardErrorImportance="high"
-          Command='dotnet exec &quot;$(QuarkThemeBuildTasksDll)&quot; --targetPath &quot;$(TargetPath)&quot; --projectDir &quot;$(ProjectDir)&quot; --buildUnminified &quot;$(QuarkThemeBuildUnminified)&quot; --buildMinified &quot;$(QuarkThemeBuildMinified)&quot;' />
+          Command='dotnet exec &quot;$(QuarkThemeBuildTasksDllPath)&quot; --targetPath &quot;$(TargetPath)&quot; --projectDir &quot;$(ProjectDir)&quot; --buildUnminified &quot;$(QuarkThemeBuildUnminified)&quot; --buildMinified &quot;$(QuarkThemeBuildMinified)&quot;' />
     </Target>
 
 </Project>
