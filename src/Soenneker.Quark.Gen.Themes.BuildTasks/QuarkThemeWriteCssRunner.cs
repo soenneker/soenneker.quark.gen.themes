@@ -78,7 +78,7 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
                 buildUnminified,
                 buildMinified);
 
-            if (!File.Exists(targetPath))
+            if (!await _fileUtil.Exists(targetPath, cancellationToken))
                 return Fail($"Target assembly not found: {targetPath}");
 
             string targetDir = Path.GetDirectoryName(targetPath) ?? projectDir;
@@ -494,15 +494,15 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
         await _directoryUtil.Create(dir, true, cancellationToken)
                             .NoSync();
 
-        if (File.Exists(path))
+        if (await _fileUtil.Exists(path, cancellationToken))
         {
-            string existing = await File.ReadAllTextAsync(path, cancellationToken);
+            string existing = await _fileUtil.Read(path, log: false, cancellationToken);
             if (string.Equals(existing, content, StringComparison.Ordinal))
                 return;
         }
 
         string tmp = path + ".tmp";
-        await File.WriteAllTextAsync(tmp, content, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), cancellationToken);
+        await _fileUtil.Write(tmp, content, log: false, cancellationToken);
 
         await _fileUtil.Move(tmp, path, cancellationToken: cancellationToken)
                        .NoSync();
