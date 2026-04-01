@@ -14,7 +14,7 @@
 
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.5" />
-        <PackageReference Include="Soenneker.Css.Minify" Version="4.0.48" />
+        <PackageReference Include="Soenneker.Css.Minify" Version="4.0.49" />
         <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.838" />
     </ItemGroup>
 </Project>
