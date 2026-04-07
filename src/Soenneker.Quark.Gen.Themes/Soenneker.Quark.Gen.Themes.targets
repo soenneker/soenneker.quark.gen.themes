@@ -21,7 +21,8 @@
     </PropertyGroup>
 
     <Target Name="WriteQuarkThemeCss"
-            AfterTargets="Build"
+            AfterTargets="CoreCompile"
+            BeforeTargets="RunTailwindGeneratorBuildTasks;Build"
             Condition="'$(DesignTimeBuild)'!='true'
                  and '$(IsCrossTargetingBuild)'!='true'">
 

@@ -26,6 +26,14 @@ public static class MyTheme
     public static Theme Build() => new()
     {
         Name = "MyTheme",
+        Tokens = new ThemeTokens
+        {
+            Light =
+            {
+                Primary = "oklch(0.623 0.214 259.815)",
+                PrimaryForeground = "oklch(0.985 0 0)"
+            }
+        },
         Buttons = new ButtonOptions
         {
             // theme options here
@@ -33,3 +41,5 @@ public static class MyTheme
     };
 }
 ```
+
+By default the same theme definition also emits `tailwind/quark-theme.generated.css`, which `Soenneker.Quark.Gen.Tailwind` can import to override the baked-in shadcn theme defaults at build time.

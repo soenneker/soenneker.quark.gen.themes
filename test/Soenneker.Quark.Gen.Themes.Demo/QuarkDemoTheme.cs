@@ -6,6 +6,19 @@ public static class QuarkDemoTheme
     public static Theme Build() => new()
     {
         Name = "Quark Demo",
+        Tokens = new ThemeTokens
+        {
+            Light =
+            {
+                Primary = "oklch(0.623 0.214 259.815)",
+                PrimaryForeground = "oklch(0.985 0 0)"
+            },
+            Dark =
+            {
+                Primary = "oklch(0.809 0.105 251.813)",
+                PrimaryForeground = "oklch(0.205 0 0)"
+            }
+        },
         Anchors = new AnchorOptions
         {
             Selector = "a",
@@ -16,13 +29,13 @@ public static class QuarkDemoTheme
         {
             BackgroundColor = "#2563eb",
             TextColor = "#ffffff",
-            BorderRadius = "0.5rem",
+            Rounded = "0.5rem",
             Padding = "0.5rem 1rem"
         },
         Cards = new CardOptions
         {
             BackgroundColor = "#ffffff",
-            BorderRadius = "0.75rem",
+            Rounded = "0.75rem",
             BoxShadow = "0 0.25rem 0.75rem rgba(0,0,0,0.08)"
         }
     };
