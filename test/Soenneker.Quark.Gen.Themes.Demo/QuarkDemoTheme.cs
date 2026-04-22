@@ -22,7 +22,7 @@ public static class QuarkDemoTheme
         Anchors = new AnchorOptions
         {
             Selector = "a",
-            TextDecoration = TextDecoration.None,
+            DecorationLine = DecorationLine.None,
             TextColor = "#2563ba"
         },
         Buttons = new ButtonOptions

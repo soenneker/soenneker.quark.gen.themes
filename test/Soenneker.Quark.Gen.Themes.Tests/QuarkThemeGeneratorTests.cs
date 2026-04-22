@@ -1,16 +1,15 @@
-using Soenneker.Tests.FixturedUnit;
-using Xunit;
+using Soenneker.Tests.HostedUnit;
 
 namespace Soenneker.Quark.Gen.Themes.Tests;
 
-[Collection("Collection")]
-public sealed class QuarkThemeGeneratorTests : FixturedUnitTest
+[ClassDataSource<Host>(Shared = SharedType.PerTestSession)]
+public sealed class QuarkThemeGeneratorTests : HostedUnitTest
 {
-    public QuarkThemeGeneratorTests(Fixture fixture, ITestOutputHelper output) : base(fixture, output)
+    public QuarkThemeGeneratorTests(Host host) : base(host)
     {
     }
 
-    [Fact]
+    [Test]
     public void Default()
     {
 

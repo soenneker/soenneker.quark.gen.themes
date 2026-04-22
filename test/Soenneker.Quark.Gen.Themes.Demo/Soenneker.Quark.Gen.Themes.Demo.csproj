@@ -1,7 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-
 <Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
-
     <PropertyGroup>
         <TargetFramework>net10.0</TargetFramework>
         <ImplicitUsings>enable</ImplicitUsings>
@@ -24,5 +21,4 @@
         <ProjectReference Include="..\..\src\Soenneker.Quark.Gen.Themes\Soenneker.Quark.Gen.Themes.csproj" />
         <ProjectReference Include="..\..\..\soenneker.quark.suite\src\Soenneker.Quark.Suite\Soenneker.Quark.Suite.csproj" />
     </ItemGroup>
-
 </Project>
