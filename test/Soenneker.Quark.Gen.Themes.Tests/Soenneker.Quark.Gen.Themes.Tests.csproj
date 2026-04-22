@@ -23,12 +23,7 @@
     </ItemGroup>
 
     <ItemGroup>
-        <Content Include="testconfig.json">
-            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-        </Content>
-    </ItemGroup>
-
-    <ItemGroup>
         <ProjectReference Include="..\..\src\Soenneker.Quark.Gen.Themes\Soenneker.Quark.Gen.Themes.csproj" />
     </ItemGroup>
 </Project>
+
