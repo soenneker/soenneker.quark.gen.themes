@@ -18,9 +18,9 @@ public static class Startup
 
     public static IServiceCollection SetupIoC(this IServiceCollection services)
     {
-        services.AddCssMinifierAsScoped();
-        services.AddDirectoryUtilAsScoped();
-        services.AddScoped<IQuarkThemeWriteCssRunner, QuarkThemeWriteCssRunner>();
+        services.AddCssMinifierAsSingleton();
+        services.AddDirectoryUtilAsSingleton();
+        services.AddSingleton<IQuarkThemeWriteCssRunner, QuarkThemeWriteCssRunner>();
 
         services.AddHostedService<ConsoleHostedService>();
 
