@@ -1,4 +1,3 @@
-using Soenneker.Quark;
 using Soenneker.Quark.Tokens;
 
 namespace Soenneker.Quark.Gen.Themes.Demo;
@@ -39,7 +38,7 @@ public static class QuarkDemoTheme
         {
             BackgroundColor = "#ffffff",
             Rounded = "0.75rem",
-            BoxShadow = "0 0.25rem 0.75rem rgba(0,0,0,0.08)"
+            Shadow = "0 0.25rem 0.75rem rgba(0,0,0,0.08)"
         }
     };
 }
