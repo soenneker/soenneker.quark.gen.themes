@@ -52,7 +52,7 @@
     <ItemGroup>
         <None Include="Soenneker.Quark.Gen.Themes.targets" Pack="true" PackagePath="build/" />
         <None Include="Soenneker.Quark.Gen.Themes.targets" Pack="true" PackagePath="buildTransitive/" />
-        <None Include="$([MSBuild]::EnsureTrailingSlash('$(_QuarkThemeBuildTasksOutputDir)'))**/*.*" Pack="true" PackagePath="buildTransitive/%(RecursiveDir)" />
+        <None Include="GenerateQuarkThemeCssAttribute.cs" Pack="true" PackagePath="contentFiles/cs/any/Soenneker.Quark.Gen.Themes/GenerateQuarkThemeCssAttribute.cs" BuildAction="Compile" />
     </ItemGroup>
 
     <ItemGroup>
@@ -68,8 +68,13 @@
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.3.0" PrivateAssets="all" />
     </ItemGroup>
 
-    <Target Name="BuildBuildTasksTool" BeforeTargets="Pack" Condition="'$(IsPackable)' == 'true'">
+    <Target Name="BuildBuildTasksTool" BeforeTargets="_GetPackageFiles" Condition="'$(IsPackable)' == 'true'">
+        <RemoveDir Directories="$(_QuarkThemeBuildTasksOutputDir)" Condition="Exists('$(_QuarkThemeBuildTasksOutputDir)')" />
         <MSBuild Projects="$(_QuarkThemeBuildTasksProjectPath)" Targets="Build" Properties="Configuration=$(Configuration);NoBuild=false" BuildInParallel="true" />
         <Error Condition="!Exists('$(_QuarkThemeBuildTasksDllPath)')" Text="BuildTasks output missing. Aborting pack to avoid publishing a broken package." />
+        <ItemGroup>
+            <None Include="$(_QuarkThemeBuildTasksOutputDir)\*.*" Pack="true" PackagePath="buildTransitive/" />
+            <None Include="$(_QuarkThemeBuildTasksOutputDir)\runtimes\win\lib\net10.0\*.*" Pack="true" PackagePath="buildTransitive/runtimes/win/lib/net10.0/" Condition="Exists('$(_QuarkThemeBuildTasksOutputDir)\runtimes\win\lib\net10.0')" />
+        </ItemGroup>
     </Target>
 </Project>

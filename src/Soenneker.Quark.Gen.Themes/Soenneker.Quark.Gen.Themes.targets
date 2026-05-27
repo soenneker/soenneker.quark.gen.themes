@@ -28,7 +28,7 @@
 
         <Message Importance="high" Text="🔥 WriteQuarkThemeCss running" />
         <Message Importance="high" Text="TargetPath=$(TargetPath) Exists=$([System.IO.File]::Exists('$(TargetPath)'))" />
-        <Message Importance="high" Text="ProjectDir=$(ProjectDir)" />
+        <Message Importance="high" Text="ProjectDir=$(MSBuildProjectDirectory)" />
         <Message Importance="high" Text="QuarkThemeBuildTasksDllPath=$(QuarkThemeBuildTasksDllPath) Exists=$([System.IO.File]::Exists('$(QuarkThemeBuildTasksDllPath)'))" />
 
         <Error Condition="'$(QuarkThemeBuildTasksDllPath)'==''"
@@ -46,7 +46,7 @@
           ConsoleToMSBuild="true"
           StandardOutputImportance="high"
           StandardErrorImportance="high"
-          Command='dotnet exec &quot;$(QuarkThemeBuildTasksDllPath)&quot; --targetPath &quot;$(TargetPath)&quot; --projectDir &quot;$(ProjectDir)&quot; --buildUnminified &quot;$(QuarkThemeBuildUnminified)&quot; --buildMinified &quot;$(QuarkThemeBuildMinified)&quot;' />
+          Command='dotnet exec &quot;$(QuarkThemeBuildTasksDllPath)&quot; --targetPath &quot;$(TargetPath)&quot; --projectDir &quot;$(MSBuildProjectDirectory)&quot; --buildUnminified &quot;$(QuarkThemeBuildUnminified)&quot; --buildMinified &quot;$(QuarkThemeBuildMinified)&quot;' />
     </Target>
 
 </Project>
