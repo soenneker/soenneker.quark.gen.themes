@@ -52,7 +52,6 @@
     <ItemGroup>
         <None Include="Soenneker.Quark.Gen.Themes.targets" Pack="true" PackagePath="build/" />
         <None Include="Soenneker.Quark.Gen.Themes.targets" Pack="true" PackagePath="buildTransitive/" />
-        <None Include="GenerateQuarkThemeCssAttribute.cs" Pack="true" PackagePath="contentFiles/cs/any/Soenneker.Quark.Gen.Themes/GenerateQuarkThemeCssAttribute.cs" BuildAction="Compile" />
     </ItemGroup>
 
     <ItemGroup>
