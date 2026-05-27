@@ -42,4 +42,4 @@ public static class MyTheme
 }
 ```
 
-By default the same theme definition also emits `tailwind/quark-theme.generated.css`, which `Soenneker.Quark.Gen.Tailwind` can import to override the baked-in shadcn theme defaults at build time.
+The generator emits the runtime Quark theme stylesheet. Tailwind theme input is owned by `Soenneker.Quark.Gen.Tailwind`.

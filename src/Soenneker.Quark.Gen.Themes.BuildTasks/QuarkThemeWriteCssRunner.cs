@@ -23,7 +23,6 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 {
     private const string _manifestTypeName = "Soenneker.Quark.Gen.Themes.Generated.QuarkThemeCssManifest";
     private const string _manifestFieldName = "Data";
-    private const string _defaultTailwindThemeOutputPath = @"tailwind\quark-theme.generated.css";
 
     private readonly ICssMinifier _cssMinifier;
     private readonly ILogger<QuarkThemeWriteCssRunner> _logger;
@@ -103,11 +102,6 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
             if (componentsGen is null)
                 return Fail("Missing required type: Soenneker.Quark.ComponentsCssGenerator");
 
-            Type? tailwindThemeGen = FindLoadedType(loadContext, "Soenneker.Quark.ThemeTailwindCssGenerator");
-
-            if (tailwindThemeGen is null)
-                return Fail("Missing required type: Soenneker.Quark.ThemeTailwindCssGenerator");
-
             List<ManifestEntry> entries = ParseManifest(manifest).ToList();
             _logger.LogInformation("Processing {EntryCount} theme manifest entries.", entries.Count);
 
@@ -140,27 +134,10 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
                     continue;
                 }
 
-                string? themeFragmentCss = GenerateCss(themeInstance, tailwindThemeGen);
-                if (themeFragmentCss is null)
-                {
-                    _logger.LogWarning("Skipping theme entry {ThemeTypeName} because Tailwind theme generation returned no content.", entry.ThemeTypeName);
-                    continue;
-                }
-
-                string tailwindThemeOutputPath = entry.TailwindThemeOutputPath;
-                if (tailwindThemeOutputPath.IsNullOrWhiteSpace())
-                    tailwindThemeOutputPath = _defaultTailwindThemeOutputPath;
-
-                if (!Path.IsPathRooted(tailwindThemeOutputPath))
-                    tailwindThemeOutputPath = Path.GetFullPath(Path.Combine(projectDir, tailwindThemeOutputPath));
-
-                _logger.LogInformation("Writing Tailwind theme fragment for {ThemeTypeName} to {OutputPath}.", entry.ThemeTypeName, tailwindThemeOutputPath);
-                await AtomicWriteUtf8NoBom(tailwindThemeOutputPath, themeFragmentCss, cancellationToken);
-
                 string? css = GenerateCss(themeInstance, componentsGen);
                 if (css is null)
                 {
-                    _logger.LogInformation("Component CSS generation returned no content for {ThemeTypeName}. Tailwind fragment was still written.", entry.ThemeTypeName);
+                    _logger.LogInformation("Component CSS generation returned no content for {ThemeTypeName}.", entry.ThemeTypeName);
                     continue;
                 }
 
@@ -453,7 +430,7 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 
     private static IEnumerable<ManifestEntry> ParseManifest(string data)
     {
-        // Each line: ThemeTypeName|OutputPath|BuildUnminified|BuildMinified|TailwindThemeOutputPath
+        // Each line: ThemeTypeName|OutputPath|BuildUnminified|BuildMinified
         string[] lines = data.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
         for (var i = 0; i < lines.Length; i++)
@@ -469,7 +446,6 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
             string path = (secondSep == -1 ? line.Substring(firstSep + 1) : line.Substring(firstSep + 1, secondSep - firstSep - 1)).Trim();
             var buildUnminified = true;
             var buildMinified = true;
-            string tailwindThemeOutputPath = _defaultTailwindThemeOutputPath;
 
             if (secondSep != -1 && secondSep < line.Length - 1)
             {
@@ -479,24 +455,16 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
                 {
                     bool? u = ParseManifestBool(rest.Substring(0, thirdSep));
                     string minifiedAndTailwind = thirdSep + 1 < rest.Length ? rest.Substring(thirdSep + 1) : "";
-                    int fourthSep = minifiedAndTailwind.IndexOf('|');
-                    bool? m = ParseManifestBool(fourthSep >= 0 ? minifiedAndTailwind.Substring(0, fourthSep) : minifiedAndTailwind);
+                    bool? m = ParseManifestBool(minifiedAndTailwind);
                     buildUnminified = u ?? true;
                     buildMinified = m ?? true;
-
-                    if (fourthSep >= 0)
-                    {
-                        string tailwindPathSegment = fourthSep + 1 < minifiedAndTailwind.Length ? minifiedAndTailwind.Substring(fourthSep + 1).Trim() : "";
-                        if (!tailwindPathSegment.IsNullOrWhiteSpace())
-                            tailwindThemeOutputPath = tailwindPathSegment;
-                    }
                 }
             }
 
             if (typeName.Length == 0 || path.Length == 0)
                 continue;
 
-            yield return new ManifestEntry(typeName, path, buildUnminified, buildMinified, tailwindThemeOutputPath);
+            yield return new ManifestEntry(typeName, path, buildUnminified, buildMinified);
         }
     }
 

@@ -15,6 +15,4 @@ public sealed class GenerateQuarkThemeCssAttribute : Attribute
     public bool BuildUnminified { get; set; } = true;
 
     public bool BuildMinified { get; set; } = true;
-
-    public string TailwindThemeOutputFilePath { get; set; } = @"tailwind\quark-theme.generated.css";
 }

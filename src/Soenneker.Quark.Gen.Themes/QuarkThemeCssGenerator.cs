@@ -31,8 +31,6 @@ namespace Soenneker.Quark.Gen.Themes
             "        public bool BuildUnminified { get; set; } = true;\n" +
             "\n" +
             "        public bool BuildMinified { get; set; } = true;\n" +
-            "\n" +
-            "        public string TailwindThemeOutputFilePath { get; set; } = @\"tailwind\\quark-theme.generated.css\";\n" +
             "    }\n" +
             "}\n";
 
@@ -96,7 +94,7 @@ namespace Soenneker.Quark.Gen.Themes
                 }
 
                 INamedTypeSymbol? serviceProviderType = compilation.GetTypeByMetadataName("System.IServiceProvider");
-                var entries = new List<(string ThemeTypeName, string OutputPath, bool BuildUnminified, bool BuildMinified, string TailwindThemeOutputPath)>(capacity: suiteCandidates.Length + generatorCandidates.Length);
+                var entries = new List<(string ThemeTypeName, string OutputPath, bool BuildUnminified, bool BuildMinified)>(capacity: suiteCandidates.Length + generatorCandidates.Length);
 
                 foreach (Candidate candidate in MergeCandidates(suiteCandidates, generatorCandidates))
                 {
@@ -119,8 +117,7 @@ namespace Soenneker.Quark.Gen.Themes
 
                     string fullName = GetFullyQualifiedName(classSymbol);
                     (bool buildUnminified, bool buildMinified) = GetBuildUnminifiedAndMinified(attributeData);
-                    string tailwindThemeOutputPath = GetTailwindThemeOutputFilePath(attributeData);
-                    entries.Add((fullName, outputFilePath.Trim(), buildUnminified, buildMinified, tailwindThemeOutputPath));
+                    entries.Add((fullName, outputFilePath.Trim(), buildUnminified, buildMinified));
                 }
 
                 EmitManifest(spc, entries);
@@ -198,24 +195,21 @@ namespace Soenneker.Quark.Gen.Themes
             return SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, serviceProviderType);
         }
 
-        private static void EmitManifest(SourceProductionContext context, List<(string ThemeTypeName, string OutputPath, bool BuildUnminified, bool BuildMinified, string TailwindThemeOutputPath)> entries)
+        private static void EmitManifest(SourceProductionContext context, List<(string ThemeTypeName, string OutputPath, bool BuildUnminified, bool BuildMinified)> entries)
         {
-            // Each line: {ThemeTypeName}|{OutputPath}|{BuildUnminified}|{BuildMinified}|{TailwindThemeOutputPath}
+            // Each line: {ThemeTypeName}|{OutputPath}|{BuildUnminified}|{BuildMinified}
             // Keep it stable + dead simple to parse at runtime.
             var sb = new StringBuilder(capacity: 256);
 
             for (var i = 0; i < entries.Count; i++)
             {
-                (string themeTypeName, string outputPath, bool buildUnminified, bool buildMinified, string tailwindThemeOutputPath) = entries[i];
+                (string themeTypeName, string outputPath, bool buildUnminified, bool buildMinified) = entries[i];
 
                 if (themeTypeName.Length == 0 || outputPath.Length == 0)
                     continue;
 
                 // Guard against accidental '|' or newlines in the path; you can make this stricter if you want.
                 if (outputPath.IndexOf('|') >= 0 || outputPath.IndexOf('\n') >= 0 || outputPath.IndexOf('\r') >= 0)
-                    continue;
-
-                if (tailwindThemeOutputPath.IndexOf('|') >= 0 || tailwindThemeOutputPath.IndexOf('\n') >= 0 || tailwindThemeOutputPath.IndexOf('\r') >= 0)
                     continue;
 
                 sb.Append(themeTypeName);
@@ -225,8 +219,6 @@ namespace Soenneker.Quark.Gen.Themes
                 sb.Append(buildUnminified ? "1" : "0");
                 sb.Append('|');
                 sb.Append(buildMinified ? "1" : "0");
-                sb.Append('|');
-                sb.Append(tailwindThemeOutputPath);
                 sb.Append('\n');
             }
 
@@ -238,7 +230,7 @@ namespace Soenneker.Quark.Gen.Themes
                 "{\n" +
                 "    internal static class QuarkThemeCssManifest\n" +
                 "    {\n" +
-                "        /// <summary>Each line: {ThemeTypeName}|{OutputPath}|{BuildUnminified}|{BuildMinified}|{TailwindThemeOutputPath}</summary>\n" +
+                "        /// <summary>Each line: {ThemeTypeName}|{OutputPath}|{BuildUnminified}|{BuildMinified}</summary>\n" +
                 $"        public const string Data = @\"{data}\";\n" +
                 "    }\n" +
                 "}\n";
@@ -285,15 +277,5 @@ namespace Soenneker.Quark.Gen.Themes
             return (buildUnminified, buildMinified);
         }
 
-        private static string GetTailwindThemeOutputFilePath(AttributeData attributeData)
-        {
-            foreach (KeyValuePair<string, TypedConstant> namedArgument in attributeData.NamedArguments)
-            {
-                if (namedArgument.Key == "TailwindThemeOutputFilePath" && namedArgument.Value.Value is string value && value.Trim().Length > 0)
-                    return value.Trim();
-            }
-
-            return @"tailwind\quark-theme.generated.css";
-        }
     }
 }
