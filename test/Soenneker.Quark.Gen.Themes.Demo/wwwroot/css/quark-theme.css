@@ -1,14 +1,18 @@
 a {
-  color: #2563ba;
+  color: var(--primary);
   text-decoration: none;
 }
-.q-button {
-  padding: 0.5rem 1rem;
-  color: #ffffff;
-  background-color: #2563eb;
+[data-slot='button'] {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  color: var(--color-blue-100);
+  background-color: var(--primary);
   border-radius: 0.5rem;
 }
-.q-card {
-  background-color: #ffffff;
+[data-slot='card'] {
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+  background-color: var(--card);
   border-radius: 0.75rem;
 }

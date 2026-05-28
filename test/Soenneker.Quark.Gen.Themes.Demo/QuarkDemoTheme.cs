@@ -25,20 +25,20 @@ public static class QuarkDemoTheme
         {
             Selector = "a",
             DecorationLine = DecorationLine.None,
-            TextColor = "#2563ba"
+            TextColor = TextColor.Primary
         },
         Buttons = new ButtonOptions
         {
-            BackgroundColor = "#2563eb",
-            TextColor = "#ffffff",
-            Rounded = "0.5rem",
-            Padding = "0.5rem 1rem"
+            BackgroundColor = BackgroundColor.Primary,
+            TextColor = TextColor.Blue.Is100,
+            Rounded = Rounded.Lg,
+            Padding = Padding.OnY.Is2.OnX.Is4
         },
         Cards = new CardOptions
         {
-            BackgroundColor = "#ffffff",
-            Rounded = "0.75rem",
-            Shadow = "0 0.25rem 0.75rem rgba(0,0,0,0.08)"
+            BackgroundColor = BackgroundColor.Card,
+            Rounded = Rounded.Xl,
+            Shadow = Shadow.Sm
         }
     };
 }
