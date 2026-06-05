@@ -6,6 +6,9 @@ namespace Soenneker.Quark.Gen.Themes.BuildTasks.Dtos;
 /// </summary>
 public sealed class CommandLineArgs
 {
+    /// <summary>
+    /// Gets args.
+    /// </summary>
     public string[] Args { get; }
 
     public CommandLineArgs(string[]? args)

@@ -9,10 +9,18 @@ using System.Threading.Tasks;
 
 namespace Soenneker.Quark.Gen.Themes.BuildTasks;
 
+/// <summary>
+/// Represents the program.
+/// </summary>
 public sealed class Program
 {
     private static CancellationTokenSource? _cts;
 
+    /// <summary>
+    /// Executes the main operation.
+    /// </summary>
+    /// <param name="args">The args.</param>
+    /// <returns>A task that represents the asynchronous operation.</returns>
     public static async Task Main(string[] args)
     {
         _cts = new CancellationTokenSource();
