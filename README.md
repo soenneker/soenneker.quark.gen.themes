@@ -42,4 +42,5 @@ public static class MyTheme
 }
 ```
 
-The generator emits the runtime Quark theme stylesheet. Tailwind theme input is owned by `Soenneker.Quark.Gen.Tailwind`.
+The generator emits the runtime Quark theme stylesheet and, by default, Tailwind token CSS at `tailwind/quark-theme.generated.css`.
+Set `BuildTailwind = false` or `TailwindOutputFilePath = "..."` on the attribute when a project needs different behavior.

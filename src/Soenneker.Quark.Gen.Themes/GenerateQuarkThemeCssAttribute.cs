@@ -27,4 +27,14 @@ public sealed class GenerateQuarkThemeCssAttribute : Attribute
     /// Gets or sets a value indicating whether build minified.
     /// </summary>
     public bool BuildMinified { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the Tailwind token CSS output file path.
+    /// </summary>
+    public string TailwindOutputFilePath { get; set; } = "tailwind/quark-theme.generated.css";
+
+    /// <summary>
+    /// Gets or sets a value indicating whether Tailwind token CSS should be built.
+    /// </summary>
+    public bool BuildTailwind { get; set; } = true;
 }

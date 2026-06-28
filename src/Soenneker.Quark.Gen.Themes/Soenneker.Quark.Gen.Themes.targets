@@ -18,6 +18,8 @@
         <QuarkThemeBuildUnminified Condition="'$(QuarkThemeBuildUnminified)'==''">true</QuarkThemeBuildUnminified>
         <!-- Set to true to emit minified CSS; false to skip. Can be used together with QuarkThemeBuildUnminified. -->
         <QuarkThemeBuildMinified Condition="'$(QuarkThemeBuildMinified)'==''">true</QuarkThemeBuildMinified>
+        <!-- Set to true to emit Tailwind token CSS from Theme.Tokens. -->
+        <QuarkThemeBuildTailwind Condition="'$(QuarkThemeBuildTailwind)'==''">true</QuarkThemeBuildTailwind>
     </PropertyGroup>
 
     <Target Name="WriteQuarkThemeCss"
@@ -46,7 +48,7 @@
           ConsoleToMSBuild="true"
           StandardOutputImportance="high"
           StandardErrorImportance="high"
-          Command='dotnet exec &quot;$(QuarkThemeBuildTasksDllPath)&quot; --targetPath &quot;$(TargetPath)&quot; --projectDir &quot;$(MSBuildProjectDirectory)&quot; --buildUnminified &quot;$(QuarkThemeBuildUnminified)&quot; --buildMinified &quot;$(QuarkThemeBuildMinified)&quot;' />
+          Command='dotnet exec &quot;$(QuarkThemeBuildTasksDllPath)&quot; --targetPath &quot;$(TargetPath)&quot; --projectDir &quot;$(MSBuildProjectDirectory)&quot; --buildUnminified &quot;$(QuarkThemeBuildUnminified)&quot; --buildMinified &quot;$(QuarkThemeBuildMinified)&quot; --buildTailwind &quot;$(QuarkThemeBuildTailwind)&quot;' />
     </Target>
 
 </Project>

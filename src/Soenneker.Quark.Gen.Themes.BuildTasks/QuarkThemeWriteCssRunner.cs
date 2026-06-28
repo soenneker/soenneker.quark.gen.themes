@@ -54,14 +54,16 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 
             bool buildUnminified = ParseBool(map, "--buildUnminified", defaultValue: true);
             bool buildMinified = ParseBool(map, "--buildMinified", defaultValue: true);
+            bool buildTailwind = ParseBool(map, "--buildTailwind", defaultValue: true);
 
             // When Windows cmd escapes the closing quote on projectDir, the rest of the args are swallowed
             // so --buildMinified may be missing from the map; we default to true, but log to diagnose.
-            if (!map.ContainsKey("--buildUnminified") || !map.ContainsKey("--buildMinified"))
+            if (!map.ContainsKey("--buildUnminified") || !map.ContainsKey("--buildMinified") || !map.ContainsKey("--buildTailwind"))
                 _logger.LogWarning(
-                    "buildUnminified={BuildUnminified} buildMinified={BuildMinified} (some args may have been swallowed by shell quoting)",
+                    "buildUnminified={BuildUnminified} buildMinified={BuildMinified} buildTailwind={BuildTailwind} (some args may have been swallowed by shell quoting)",
                     buildUnminified,
-                    buildMinified);
+                    buildMinified,
+                    buildTailwind);
 
             targetPath = SanitizePathArg(targetPath);
             projectDir = SanitizePathArg(projectDir);
@@ -70,10 +72,11 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 
             _logger.LogInformation("Starting theme CSS generation for project {ProjectDir}.", projectDir);
             _logger.LogInformation(
-                "Theme CSS generation target assembly: {TargetPath} (buildUnminified={BuildUnminified}, buildMinified={BuildMinified}).",
+                "Theme CSS generation target assembly: {TargetPath} (buildUnminified={BuildUnminified}, buildMinified={BuildMinified}, buildTailwind={BuildTailwind}).",
                 targetPath,
                 buildUnminified,
-                buildMinified);
+                buildMinified,
+                buildTailwind);
 
             if (!await _fileUtil.Exists(targetPath, cancellationToken))
                 return Fail($"Target assembly not found: {targetPath}");
@@ -101,6 +104,11 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 
             if (componentsGen is null)
                 return Fail("Missing required type: Soenneker.Quark.ComponentsCssGenerator");
+
+            Type? tailwindGen = buildTailwind ? FindLoadedType(loadContext, "Soenneker.Quark.ThemeTailwindCssGenerator") : null;
+
+            if (buildTailwind && tailwindGen is null)
+                _logger.LogWarning("Missing type Soenneker.Quark.ThemeTailwindCssGenerator. Tailwind token CSS generation will be skipped.");
 
             List<ManifestEntry> entries = ParseManifest(manifest).ToList();
             _logger.LogInformation("Processing {EntryCount} theme manifest entries.", entries.Count);
@@ -134,32 +142,50 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
                     continue;
                 }
 
-                string? css = GenerateCss(themeInstance, componentsGen);
-                if (css is null)
+                string? componentCss = GenerateCss(themeInstance, componentsGen);
+                if (componentCss is null)
                 {
                     _logger.LogInformation("Component CSS generation returned no content for {ThemeTypeName}.", entry.ThemeTypeName);
-                    continue;
+                }
+                else
+                {
+                    string outputPath = entry.OutputPath;
+                    if (!Path.IsPathRooted(outputPath))
+                        outputPath = Path.GetFullPath(Path.Combine(projectDir, outputPath));
+
+                    // Two files: base.css (unminified) and base.min.css (minified). Write each only when its flag is true.
+                    string unminifiedPath = GetBaseCssPath(outputPath);
+                    string minifiedPath = GetMinifiedPath(unminifiedPath);
+
+                    if (buildUnminified)
+                    {
+                        _logger.LogInformation("Writing unminified theme CSS for {ThemeTypeName} to {OutputPath}.", entry.ThemeTypeName, unminifiedPath);
+                        await AtomicWriteUtf8NoBom(unminifiedPath, componentCss, cancellationToken);
+                    }
+
+                    if (buildMinified)
+                    {
+                        _logger.LogInformation("Writing minified theme CSS for {ThemeTypeName} to {OutputPath}.", entry.ThemeTypeName, minifiedPath);
+                        string minifiedCss = _cssMinifier.Minify(componentCss);
+                        await AtomicWriteUtf8NoBom(minifiedPath, minifiedCss, cancellationToken);
+                    }
                 }
 
-                string outputPath = entry.OutputPath;
-                if (!Path.IsPathRooted(outputPath))
-                    outputPath = Path.GetFullPath(Path.Combine(projectDir, outputPath));
-
-                // Two files: base.css (unminified) and base.min.css (minified). Write each only when its flag is true.
-                string unminifiedPath = GetBaseCssPath(outputPath);
-                string minifiedPath = GetMinifiedPath(unminifiedPath);
-
-                if (buildUnminified)
+                if (buildTailwind && entry.BuildTailwind && tailwindGen is not null)
                 {
-                    _logger.LogInformation("Writing unminified theme CSS for {ThemeTypeName} to {OutputPath}.", entry.ThemeTypeName, unminifiedPath);
-                    await AtomicWriteUtf8NoBom(unminifiedPath, css, cancellationToken);
-                }
+                    string? tailwindCss = GenerateCss(themeInstance, tailwindGen);
+                    if (tailwindCss is null)
+                    {
+                        _logger.LogInformation("Tailwind token CSS generation returned no content for {ThemeTypeName}.", entry.ThemeTypeName);
+                        continue;
+                    }
 
-                if (buildMinified)
-                {
-                    _logger.LogInformation("Writing minified theme CSS for {ThemeTypeName} to {OutputPath}.", entry.ThemeTypeName, minifiedPath);
-                    string minifiedCss = _cssMinifier.Minify(css);
-                    await AtomicWriteUtf8NoBom(minifiedPath, minifiedCss, cancellationToken);
+                    string tailwindOutputPath = entry.TailwindOutputPath;
+                    if (!Path.IsPathRooted(tailwindOutputPath))
+                        tailwindOutputPath = Path.GetFullPath(Path.Combine(projectDir, tailwindOutputPath));
+
+                    _logger.LogInformation("Writing Tailwind token CSS for {ThemeTypeName} to {OutputPath}.", entry.ThemeTypeName, tailwindOutputPath);
+                    await AtomicWriteUtf8NoBom(tailwindOutputPath, tailwindCss, cancellationToken);
                 }
             }
 
@@ -430,7 +456,7 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 
     private static IEnumerable<ManifestEntry> ParseManifest(string data)
     {
-        // Each line: ThemeTypeName|OutputPath|BuildUnminified|BuildMinified
+        // Each line: ThemeTypeName|OutputPath|BuildUnminified|BuildMinified|TailwindOutputPath|BuildTailwind
         string[] lines = data.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
 
         for (var i = 0; i < lines.Length; i++)
@@ -446,6 +472,9 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
             string path = (secondSep == -1 ? line.Substring(firstSep + 1) : line.Substring(firstSep + 1, secondSep - firstSep - 1)).Trim();
             var buildUnminified = true;
             var buildMinified = true;
+            const string defaultTailwindOutputPath = "tailwind/quark-theme.generated.css";
+            string tailwindOutputPath = defaultTailwindOutputPath;
+            var buildTailwind = true;
 
             if (secondSep != -1 && secondSep < line.Length - 1)
             {
@@ -455,16 +484,30 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
                 {
                     bool? u = ParseManifestBool(rest.Substring(0, thirdSep));
                     string minifiedAndTailwind = thirdSep + 1 < rest.Length ? rest.Substring(thirdSep + 1) : "";
-                    bool? m = ParseManifestBool(minifiedAndTailwind);
+                    int fourthSep = minifiedAndTailwind.IndexOf('|');
+                    string minifiedValue = fourthSep >= 0 ? minifiedAndTailwind.Substring(0, fourthSep) : minifiedAndTailwind;
+                    bool? m = ParseManifestBool(minifiedValue);
                     buildUnminified = u ?? true;
                     buildMinified = m ?? true;
+
+                    if (fourthSep >= 0 && fourthSep < minifiedAndTailwind.Length - 1)
+                    {
+                        string tailwindAndBuild = minifiedAndTailwind.Substring(fourthSep + 1);
+                        int fifthSep = tailwindAndBuild.IndexOf('|');
+                        string tailwindPath = (fifthSep >= 0 ? tailwindAndBuild.Substring(0, fifthSep) : tailwindAndBuild).Trim();
+                        if (!tailwindPath.IsNullOrWhiteSpace())
+                            tailwindOutputPath = tailwindPath;
+
+                        if (fifthSep >= 0 && fifthSep < tailwindAndBuild.Length - 1)
+                            buildTailwind = ParseManifestBool(tailwindAndBuild.Substring(fifthSep + 1)) ?? true;
+                    }
                 }
             }
 
             if (typeName.Length == 0 || path.Length == 0)
                 continue;
 
-            yield return new ManifestEntry(typeName, path, buildUnminified, buildMinified);
+            yield return new ManifestEntry(typeName, path, buildUnminified, buildMinified, tailwindOutputPath, buildTailwind);
         }
     }
 

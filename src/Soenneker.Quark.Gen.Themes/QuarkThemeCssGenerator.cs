@@ -31,6 +31,10 @@ namespace Soenneker.Quark.Gen.Themes
             "        public bool BuildUnminified { get; set; } = true;\n" +
             "\n" +
             "        public bool BuildMinified { get; set; } = true;\n" +
+            "\n" +
+            "        public string TailwindOutputFilePath { get; set; } = \"tailwind/quark-theme.generated.css\";\n" +
+            "\n" +
+            "        public bool BuildTailwind { get; set; } = true;\n" +
             "    }\n" +
             "}\n";
 
@@ -94,7 +98,7 @@ namespace Soenneker.Quark.Gen.Themes
                 }
 
                 INamedTypeSymbol? serviceProviderType = compilation.GetTypeByMetadataName("System.IServiceProvider");
-                var entries = new List<(string ThemeTypeName, string OutputPath, bool BuildUnminified, bool BuildMinified)>(capacity: suiteCandidates.Length + generatorCandidates.Length);
+                var entries = new List<(string ThemeTypeName, string OutputPath, bool BuildUnminified, bool BuildMinified, string TailwindOutputPath, bool BuildTailwind)>(capacity: suiteCandidates.Length + generatorCandidates.Length);
 
                 foreach (Candidate candidate in MergeCandidates(suiteCandidates, generatorCandidates))
                 {
@@ -117,7 +121,8 @@ namespace Soenneker.Quark.Gen.Themes
 
                     string fullName = GetFullyQualifiedName(classSymbol);
                     (bool buildUnminified, bool buildMinified) = GetBuildUnminifiedAndMinified(attributeData);
-                    entries.Add((fullName, outputFilePath.Trim(), buildUnminified, buildMinified));
+                    (string tailwindOutputPath, bool buildTailwind) = GetTailwindOptions(attributeData);
+                    entries.Add((fullName, outputFilePath.Trim(), buildUnminified, buildMinified, tailwindOutputPath, buildTailwind));
                 }
 
                 EmitManifest(spc, entries);
@@ -195,21 +200,22 @@ namespace Soenneker.Quark.Gen.Themes
             return SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, serviceProviderType);
         }
 
-        private static void EmitManifest(SourceProductionContext context, List<(string ThemeTypeName, string OutputPath, bool BuildUnminified, bool BuildMinified)> entries)
+        private static void EmitManifest(SourceProductionContext context, List<(string ThemeTypeName, string OutputPath, bool BuildUnminified, bool BuildMinified, string TailwindOutputPath, bool BuildTailwind)> entries)
         {
-            // Each line: {ThemeTypeName}|{OutputPath}|{BuildUnminified}|{BuildMinified}
+            // Each line: {ThemeTypeName}|{OutputPath}|{BuildUnminified}|{BuildMinified}|{TailwindOutputPath}|{BuildTailwind}
             // Keep it stable + dead simple to parse at runtime.
             var sb = new StringBuilder(capacity: 256);
 
             for (var i = 0; i < entries.Count; i++)
             {
-                (string themeTypeName, string outputPath, bool buildUnminified, bool buildMinified) = entries[i];
+                (string themeTypeName, string outputPath, bool buildUnminified, bool buildMinified, string tailwindOutputPath, bool buildTailwind) = entries[i];
 
                 if (themeTypeName.Length == 0 || outputPath.Length == 0)
                     continue;
 
                 // Guard against accidental '|' or newlines in the path; you can make this stricter if you want.
-                if (outputPath.IndexOf('|') >= 0 || outputPath.IndexOf('\n') >= 0 || outputPath.IndexOf('\r') >= 0)
+                if (outputPath.IndexOf('|') >= 0 || outputPath.IndexOf('\n') >= 0 || outputPath.IndexOf('\r') >= 0 ||
+                    tailwindOutputPath.IndexOf('|') >= 0 || tailwindOutputPath.IndexOf('\n') >= 0 || tailwindOutputPath.IndexOf('\r') >= 0)
                     continue;
 
                 sb.Append(themeTypeName);
@@ -219,6 +225,10 @@ namespace Soenneker.Quark.Gen.Themes
                 sb.Append(buildUnminified ? "1" : "0");
                 sb.Append('|');
                 sb.Append(buildMinified ? "1" : "0");
+                sb.Append('|');
+                sb.Append(tailwindOutputPath);
+                sb.Append('|');
+                sb.Append(buildTailwind ? "1" : "0");
                 sb.Append('\n');
             }
 
@@ -230,7 +240,7 @@ namespace Soenneker.Quark.Gen.Themes
                 "{\n" +
                 "    internal static class QuarkThemeCssManifest\n" +
                 "    {\n" +
-                "        /// <summary>Each line: {ThemeTypeName}|{OutputPath}|{BuildUnminified}|{BuildMinified}</summary>\n" +
+                "        /// <summary>Each line: {ThemeTypeName}|{OutputPath}|{BuildUnminified}|{BuildMinified}|{TailwindOutputPath}|{BuildTailwind}</summary>\n" +
                 $"        public const string Data = @\"{data}\";\n" +
                 "    }\n" +
                 "}\n";
@@ -275,6 +285,23 @@ namespace Soenneker.Quark.Gen.Themes
             }
 
             return (buildUnminified, buildMinified);
+        }
+
+        private static (string TailwindOutputPath, bool BuildTailwind) GetTailwindOptions(AttributeData attributeData)
+        {
+            const string defaultTailwindOutputPath = "tailwind/quark-theme.generated.css";
+            string tailwindOutputPath = defaultTailwindOutputPath;
+            var buildTailwind = true;
+
+            foreach (KeyValuePair<string, TypedConstant> namedArgument in attributeData.NamedArguments)
+            {
+                if (namedArgument.Key == "TailwindOutputFilePath" && namedArgument.Value.Value is string value)
+                    tailwindOutputPath = string.IsNullOrWhiteSpace(value) ? defaultTailwindOutputPath : value.Trim();
+                else if (namedArgument.Key == "BuildTailwind" && namedArgument.Value.Value is bool b)
+                    buildTailwind = b;
+            }
+
+            return (tailwindOutputPath, buildTailwind);
         }
 
     }
