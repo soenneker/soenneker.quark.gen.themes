@@ -20,11 +20,14 @@
         <QuarkThemeBuildMinified Condition="'$(QuarkThemeBuildMinified)'==''">true</QuarkThemeBuildMinified>
         <!-- Set to true to emit Tailwind token CSS from Theme.Tokens. -->
         <QuarkThemeBuildTailwind Condition="'$(QuarkThemeBuildTailwind)'==''">true</QuarkThemeBuildTailwind>
+        <_QuarkThemeGeneratorStamp>$([System.IO.Path]::Combine('$(MSBuildProjectExtensionsPath)', '$(Configuration)', '$(TargetFramework)', 'quark-theme-generator.stamp'))</_QuarkThemeGeneratorStamp>
     </PropertyGroup>
 
     <Target Name="WriteQuarkThemeCss"
             AfterTargets="CoreCompile"
             BeforeTargets="RunTailwindGeneratorBuildTasks;Build"
+            Inputs="$(TargetPath);$(MSBuildProjectFullPath);$(QuarkThemeBuildTasksDllPath)"
+            Outputs="$(_QuarkThemeGeneratorStamp)"
             Condition="'$(DesignTimeBuild)'!='true'
                  and '$(IsCrossTargetingBuild)'!='true'">
 
@@ -49,6 +52,7 @@
           StandardOutputImportance="high"
           StandardErrorImportance="high"
           Command='dotnet exec &quot;$(QuarkThemeBuildTasksDllPath)&quot; --targetPath &quot;$(TargetPath)&quot; --projectDir &quot;$(MSBuildProjectDirectory)&quot; --buildUnminified &quot;$(QuarkThemeBuildUnminified)&quot; --buildMinified &quot;$(QuarkThemeBuildMinified)&quot; --buildTailwind &quot;$(QuarkThemeBuildTailwind)&quot;' />
+        <Touch Files="$(_QuarkThemeGeneratorStamp)" AlwaysCreate="true" />
     </Target>
 
 </Project>
