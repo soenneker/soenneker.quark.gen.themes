@@ -9,11 +9,11 @@ namespace Soenneker.Quark.Gen.Themes.BuildTasks.Abstract
     public interface IQuarkThemeWriteCssRunner
     {
         /// <summary>
-        /// Executes the run operation.
+        /// Runs quark Theme Write CSS Runner for the Quark Theme Write CSS Runner.
         /// </summary>
-        /// <param name="args">The args.</param>
-        /// <param name="cancellationToken">The cancellation token.</param>
-        /// <returns>A task containing the result of the operation.</returns>
+        /// <param name="args">Command-line arguments passed to the application.</param>
+        /// <param name="cancellationToken">Token used to cancel the operation.</param>
+        /// <returns>A task whose result is the requested value.</returns>
         ValueTask<int> Run(string[] args, CancellationToken cancellationToken);
     }
 }
