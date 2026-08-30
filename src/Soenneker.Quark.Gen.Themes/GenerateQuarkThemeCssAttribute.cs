@@ -3,7 +3,7 @@ using System;
 namespace Soenneker.Quark.Gen.Themes;
 
 /// <summary>
-/// Represents the generate quark theme css attribute.
+/// Marks a class whose static <c>Theme</c> factory should be written as CSS during the build.
 /// </summary>
 [AttributeUsage(AttributeTargets.Class, Inherited = false)]
 public sealed class GenerateQuarkThemeCssAttribute : Attribute
@@ -14,27 +14,27 @@ public sealed class GenerateQuarkThemeCssAttribute : Attribute
     }
 
     /// <summary>
-    /// Gets output file path.
+    /// Gets the component CSS output path, relative to the project directory unless absolute.
     /// </summary>
     public string OutputFilePath { get; }
 
     /// <summary>
-    /// Gets or sets a value indicating whether build unminified.
+    /// Gets or sets whether to write the unminified component stylesheet.
     /// </summary>
     public bool BuildUnminified { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets a value indicating whether build minified.
+    /// Gets or sets whether to write the minified component stylesheet.
     /// </summary>
     public bool BuildMinified { get; set; } = true;
 
     /// <summary>
-    /// Gets or sets the Tailwind token CSS output file path.
+    /// Gets or sets the Tailwind token CSS output path, relative to the project directory unless absolute.
     /// </summary>
     public string TailwindOutputFilePath { get; set; } = "tailwind/quark-theme.generated.css";
 
     /// <summary>
-    /// Gets or sets a value indicating whether Tailwind token CSS should be built.
+    /// Gets or sets whether to write Tailwind token CSS from the theme tokens.
     /// </summary>
     public bool BuildTailwind { get; set; } = true;
 }
