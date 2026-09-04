@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
-using Soenneker.Utils.PooledStringBuilders;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
@@ -205,7 +204,7 @@ namespace Soenneker.Quark.Gen.Themes
         {
             // Each line: {ThemeTypeName}|{OutputPath}|{BuildUnminified}|{BuildMinified}|{TailwindOutputPath}|{BuildTailwind}
             // Keep it stable + dead simple to parse at runtime.
-            using var sb = new PooledStringBuilder(256);
+            var sb = new StringBuilder(256);
 
             for (var i = 0; i < entries.Count; i++)
             {
