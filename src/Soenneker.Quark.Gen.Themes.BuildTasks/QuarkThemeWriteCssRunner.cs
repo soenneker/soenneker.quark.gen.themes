@@ -18,6 +18,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Soenneker.Quark.Gen.Themes.BuildTasks;
 
+/// <inheritdoc cref="IQuarkThemeWriteCssRunner" />
 public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 {
     private const string _manifestTypeName = "Soenneker.Quark.Gen.Themes.Generated.QuarkThemeCssManifest";
