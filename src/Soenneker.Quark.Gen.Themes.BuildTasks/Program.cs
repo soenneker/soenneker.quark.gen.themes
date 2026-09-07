@@ -55,8 +55,6 @@ public sealed class Program
             {
                 builder.AddEnvironmentVariables();
                 builder.SetBasePath(hostingContext.HostingEnvironment.ContentRootPath);
-
-                builder.Build();
             })
             .ConfigureLogging(logging =>
             {
