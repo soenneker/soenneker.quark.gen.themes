@@ -34,6 +34,12 @@ jobs:
           dotnet-version: 10.0.x
           workloads: wasm-tools
 
+      - name: Restore build tasks
+        run: dotnet restore src/Soenneker.Quark.Gen.Themes.BuildTasks/Soenneker.Quark.Gen.Themes.BuildTasks.csproj --verbosity minimal
+
+      - name: Build build tasks
+        run: dotnet build src/Soenneker.Quark.Gen.Themes.BuildTasks/Soenneker.Quark.Gen.Themes.BuildTasks.csproj --configuration Release --no-restore --verbosity minimal
+
       - name: Restore demo
         run: dotnet restore test/Soenneker.Quark.Gen.Themes.Demo/Soenneker.Quark.Gen.Themes.Demo.csproj --verbosity minimal
 
