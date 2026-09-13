@@ -21,6 +21,7 @@ Add the attribute to a class that exposes exactly one public static method or pr
 ```csharp
 using Soenneker.Quark;
 using Soenneker.Quark.Gen.Themes;
+using Soenneker.Quark.Tokens;
 
 [GenerateQuarkThemeCss("wwwroot/css/quark-theme.css")]
 public static class MyTheme
@@ -38,7 +39,7 @@ public static class MyTheme
         },
         Buttons = new ButtonOptions
         {
-            // theme options here
+            Rounded = Rounded.Lg
         }
     };
 }
@@ -57,6 +58,17 @@ Load either the full or minified runtime stylesheet from the application shell:
 ```
 
 The Tailwind token file is consumed by `Soenneker.Quark.Gen.Tailwind`; it is not a replacement for the runtime component stylesheet.
+
+The example's `Buttons` rule creates component CSS. A theme containing only tokens generates the Tailwind token input; the runner skips an empty component stylesheet. Load the separate runtime theme stylesheet only when your theme produces component rules.
+
+Load the runtime theme CSS after the compiled Tailwind stylesheet:
+
+```html
+<link rel="stylesheet" href="css/quark-tailwind.min.css" />
+<link rel="stylesheet" href="css/quark-theme.min.css" />
+```
+
+When this C# factory owns the tokens, avoid a competing explicit shadcn configuration in the Tailwind generator that would replace them. Runtime light/dark switching is a separate concern: use the `IThemeInterop` registered by Quark to select the active scheme. See the [theme walkthrough](https://quark.soenneker.com/themes) for both token-authoring approaches and a complete toggle example.
 
 ## Output options
 
