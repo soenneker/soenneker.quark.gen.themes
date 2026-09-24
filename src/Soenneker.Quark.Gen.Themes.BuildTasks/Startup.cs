@@ -31,7 +31,6 @@ public static class Startup
         services.AddDirectoryUtilAsSingleton();
         services.AddSingleton<IQuarkThemeWriteCssRunner, QuarkThemeWriteCssRunner>();
 
-        services.AddHostedService<ConsoleHostedService>();
 
         return services;
     }

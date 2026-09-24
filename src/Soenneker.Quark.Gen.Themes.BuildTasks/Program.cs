@@ -1,9 +1,6 @@
 using Soenneker.Quark.Gen.Themes.BuildTasks.Abstract;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Soenneker.Quark.Gen.Themes.BuildTasks.Dtos;
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -52,35 +49,6 @@ public sealed class Program
 
             _cts.Dispose();
         }
-    }
-
-    /// <summary>
-    /// Used for WebApplicationFactory, cannot delete, cannot change access, cannot change number of parameters.
-    /// </summary>
-    /// <param name="args">Command-line arguments passed to the application.</param>
-    /// <returns>A host builder configured with the application services and settings.</returns>
-    public static IHostBuilder CreateHostBuilder(string[] args)
-    {
-        IHostBuilder host = Host.CreateDefaultBuilder(args)
-            .ConfigureAppConfiguration((hostingContext, builder) =>
-            {
-                builder.AddEnvironmentVariables();
-                builder.SetBasePath(hostingContext.HostingEnvironment.ContentRootPath);
-            })
-            .ConfigureLogging(logging =>
-            {
-                // Avoid EventLog provider dependency in build task execution
-                logging.ClearProviders();
-                logging.AddConsole();
-                logging.SetMinimumLevel(LogLevel.Trace);
-            })
-            .ConfigureServices((_, services) =>
-            {
-                services.AddSingleton(new CommandLineArgs(args));
-                Startup.ConfigureServices(services);
-            });
-
-        return host;
     }
 
     private static void OnCancelKeyPress(object? sender, ConsoleCancelEventArgs eventArgs)
