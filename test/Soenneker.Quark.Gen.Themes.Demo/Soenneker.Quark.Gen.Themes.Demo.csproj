@@ -19,7 +19,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Soenneker.Quark.Gen.Themes\Soenneker.Quark.Gen.Themes.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-        <PackageReference Include="Soenneker.Quark.Suite" Version="4.0.1443" />
+        <PackageReference Include="Soenneker.Quark.Suite" Version="4.0.1446" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Microsoft.AspNetCore.Components" Version="10.0.12" />
