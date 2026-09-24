@@ -1,3 +1,4 @@
+using Soenneker.Quark.Gen.Themes.BuildTasks.Abstract;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -28,12 +29,22 @@ public sealed class Program
 
         try
         {
-            await CreateHostBuilder(args).RunConsoleAsync(_cts.Token);
+            var services = new ServiceCollection();
+            services.AddLogging(logging => logging.AddConsole());
+            Startup.ConfigureServices(services);
+
+            await using ServiceProvider provider = services.BuildServiceProvider();
+            await using AsyncServiceScope scope = provider.CreateAsyncScope();
+            Environment.ExitCode = await scope.ServiceProvider.GetRequiredService<IQuarkThemeWriteCssRunner>().Run(args, _cts.Token);
+        }
+        catch (OperationCanceledException) when (_cts.IsCancellationRequested)
+        {
+            Environment.ExitCode = 130;
         }
         catch (Exception e)
         {
             await Console.Error.WriteLineAsync($"Stopped program because of exception: {e}");
-            throw;
+            Environment.ExitCode = 1;
         }
         finally
         {
