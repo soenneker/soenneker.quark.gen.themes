@@ -13,7 +13,7 @@
     <ItemGroup>
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.12" />
-        <PackageReference Include="Soenneker.Css.Minify" Version="4.0.137" />
+        <PackageReference Include="Soenneker.Css.Minify" Version="4.0.138" />
         <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.947" />
     </ItemGroup>
     <ItemGroup>
