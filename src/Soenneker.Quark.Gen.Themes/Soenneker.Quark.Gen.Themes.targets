@@ -52,6 +52,7 @@
           StandardOutputImportance="high"
           StandardErrorImportance="high"
           Command='dotnet exec &quot;$(QuarkThemeBuildTasksDllPath)&quot; --targetPath &quot;$(TargetPath)&quot; --projectDir &quot;$(MSBuildProjectDirectory)&quot; --buildUnminified &quot;$(QuarkThemeBuildUnminified)&quot; --buildMinified &quot;$(QuarkThemeBuildMinified)&quot; --buildTailwind &quot;$(QuarkThemeBuildTailwind)&quot;' />
+        <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(_QuarkThemeGeneratorStamp)'))" />
         <Touch Files="$(_QuarkThemeGeneratorStamp)" AlwaysCreate="true" />
     </Target>
 
