@@ -1,3 +1,4 @@
+using Soenneker.Extensions.Task;
 using Soenneker.Css.Minify.Abstract;
 using Soenneker.Extensions.ValueTask;
 using Soenneker.Quark.Gen.Themes.BuildTasks.Abstract;
@@ -78,7 +79,7 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
                 buildMinified,
                 buildTailwind);
 
-            if (!await _fileUtil.Exists(targetPath, cancellationToken))
+            if (!await _fileUtil.Exists(targetPath, cancellationToken).NoSync())
                 return Fail($"Target assembly not found: {targetPath}");
 
             string targetDir = Path.GetDirectoryName(targetPath) ?? projectDir;
@@ -89,7 +90,7 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
 
             // Load referenced assemblies (e.g. Soenneker.Quark.Suite) into the same context so generator types are found
             _logger.LogInformation("Loading referenced assemblies for theme generation...");
-            await LoadReferencedAssemblies(loadContext, targetDir, asm.GetReferencedAssemblies(), cancellationToken);
+            await LoadReferencedAssemblies(loadContext, targetDir, asm.GetReferencedAssemblies(), cancellationToken).NoSync();
 
             _logger.LogInformation("Reading embedded theme manifest...");
             string? manifest = ReadManifest(asm);
@@ -160,14 +161,14 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
                     if (buildUnminified)
                     {
                         _logger.LogInformation("Writing unminified theme CSS for {ThemeTypeName} to {OutputPath}.", entry.ThemeTypeName, unminifiedPath);
-                        await AtomicWriteUtf8NoBom(unminifiedPath, componentCss, cancellationToken);
+                        await AtomicWriteUtf8NoBom(unminifiedPath, componentCss, cancellationToken).NoSync();
                     }
 
                     if (buildMinified)
                     {
                         _logger.LogInformation("Writing minified theme CSS for {ThemeTypeName} to {OutputPath}.", entry.ThemeTypeName, minifiedPath);
                         string minifiedCss = _cssMinifier.Minify(componentCss);
-                        await AtomicWriteUtf8NoBom(minifiedPath, minifiedCss, cancellationToken);
+                        await AtomicWriteUtf8NoBom(minifiedPath, minifiedCss, cancellationToken).NoSync();
                     }
                 }
 
@@ -185,7 +186,7 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
                         tailwindOutputPath = Path.GetFullPath(Path.Combine(projectDir, tailwindOutputPath));
 
                     _logger.LogInformation("Writing Tailwind token CSS for {ThemeTypeName} to {OutputPath}.", entry.ThemeTypeName, tailwindOutputPath);
-                    await AtomicWriteUtf8NoBom(tailwindOutputPath, tailwindCss, cancellationToken);
+                    await AtomicWriteUtf8NoBom(tailwindOutputPath, tailwindCss, cancellationToken).NoSync();
                 }
             }
 
@@ -457,11 +458,9 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
     private static IEnumerable<ManifestEntry> ParseManifest(string data)
     {
         // Each line: ThemeTypeName|OutputPath|BuildUnminified|BuildMinified|TailwindOutputPath|BuildTailwind
-        string[] lines = data.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
-
-        for (var i = 0; i < lines.Length; i++)
+        using var reader = new StringReader(data);
+        while (reader.ReadLine() is { } line)
         {
-            string line = lines[i];
             int firstSep = line.IndexOf('|');
             if (firstSep <= 0 || firstSep >= line.Length - 1)
                 continue;
@@ -535,15 +534,15 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
         await _directoryUtil.Create(dir, true, cancellationToken)
                             .NoSync();
 
-        if (await _fileUtil.Exists(path, cancellationToken))
+        if (await _fileUtil.Exists(path, cancellationToken).NoSync())
         {
-            string existing = await _fileUtil.Read(path, log: false, cancellationToken);
+            string existing = await _fileUtil.Read(path, log: false, cancellationToken).NoSync();
             if (string.Equals(existing, content, StringComparison.Ordinal))
                 return;
         }
 
         string tmp = path + ".tmp";
-        await _fileUtil.Write(tmp, content, log: false, cancellationToken);
+        await _fileUtil.Write(tmp, content, log: false, cancellationToken).NoSync();
 
         await _fileUtil.Move(tmp, path, cancellationToken: cancellationToken)
                        .NoSync();

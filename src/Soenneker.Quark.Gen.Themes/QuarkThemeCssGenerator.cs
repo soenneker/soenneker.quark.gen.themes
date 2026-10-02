@@ -70,63 +70,61 @@ namespace Soenneker.Quark.Gen.Themes
             IncrementalValuesProvider<Candidate> suiteThemeClasses = context.SyntaxProvider.ForAttributeWithMetadataName(
                 _suiteAttributeName,
                 static (node, _) => node is ClassDeclarationSyntax,
-                static (ctx, _) => new Candidate((INamedTypeSymbol)ctx.TargetSymbol, ctx.Attributes.First()));
+                static (ctx, _) => GetCandidate(ctx));
 
             IncrementalValuesProvider<Candidate> generatorThemeClasses = context.SyntaxProvider.ForAttributeWithMetadataName(
                 _generatorAttributeName,
                 static (node, _) => node is ClassDeclarationSyntax,
-                static (ctx, _) => new Candidate((INamedTypeSymbol)ctx.TargetSymbol, ctx.Attributes.First()));
+                static (ctx, _) => GetCandidate(ctx));
 
-            IncrementalValueProvider<((Compilation Left, ImmutableArray<Candidate> Right) Left, ImmutableArray<Candidate> Right)> combined = context.CompilationProvider
-                                                                                                                                                    .Combine(suiteThemeClasses.Collect())
-                                                                                                                                                    .Combine(generatorThemeClasses.Collect());
+            var combined = suiteThemeClasses.Collect().Combine(generatorThemeClasses.Collect()).WithTrackingName("ThemeCandidates");
 
             context.RegisterSourceOutput(combined, static (spc, data) =>
             {
-                Compilation? compilation = data.Left.Left;
-                ImmutableArray<Candidate> suiteCandidates = data.Left.Right;
+                ImmutableArray<Candidate> suiteCandidates = data.Left;
                 ImmutableArray<Candidate> generatorCandidates = data.Right;
-
                 if (suiteCandidates.IsDefaultOrEmpty && generatorCandidates.IsDefaultOrEmpty)
                     return;
 
-                INamedTypeSymbol? themeType = compilation.GetTypeByMetadataName("Soenneker.Quark.Theme");
-                if (themeType is null)
+                if (suiteCandidates.Any(static c => c.Error == CandidateError.MissingThemeType) || generatorCandidates.Any(static c => c.Error == CandidateError.MissingThemeType))
                 {
                     spc.ReportDiagnostic(Diagnostic.Create(_themeTypeMissing, Location.None));
                     return;
                 }
 
-                INamedTypeSymbol? serviceProviderType = compilation.GetTypeByMetadataName("System.IServiceProvider");
-                var entries = new List<(string ThemeTypeName, string OutputPath, bool BuildUnminified, bool BuildMinified, string TailwindOutputPath, bool BuildTailwind)>(capacity: suiteCandidates.Length + generatorCandidates.Length);
-
+                var entries = new List<(string ThemeTypeName, string OutputPath, bool BuildUnminified, bool BuildMinified, string TailwindOutputPath, bool BuildTailwind)>(suiteCandidates.Length + generatorCandidates.Length);
                 foreach (Candidate candidate in MergeCandidates(suiteCandidates, generatorCandidates))
                 {
-                    INamedTypeSymbol classSymbol = candidate.ClassSymbol;
-                    AttributeData attributeData = candidate.Attribute;
-                    Location? classLocation = classSymbol.Locations.FirstOrDefault();
-
-                    string? outputFilePath = GetOutputFilePath(attributeData);
-                    if (outputFilePath is null || outputFilePath.Trim().Length == 0)
+                    if (candidate.Error != CandidateError.None)
                     {
-                        spc.ReportDiagnostic(Diagnostic.Create(_missingOutputPath, classLocation, classSymbol.Name));
+                        spc.ReportDiagnostic(Diagnostic.Create(candidate.Error == CandidateError.MissingOutputPath ? _missingOutputPath : _themeFactoryMissing,
+                            candidate.Location, candidate.ClassName));
                         continue;
                     }
 
-                    if (!TryGetThemeFactoryMember(classSymbol, themeType, serviceProviderType))
-                    {
-                        spc.ReportDiagnostic(Diagnostic.Create(_themeFactoryMissing, classLocation, classSymbol.Name));
-                        continue;
-                    }
-
-                    string fullName = GetFullyQualifiedName(classSymbol);
-                    (bool buildUnminified, bool buildMinified) = GetBuildUnminifiedAndMinified(attributeData);
-                    (string tailwindOutputPath, bool buildTailwind) = GetTailwindOptions(attributeData);
-                    entries.Add((fullName, outputFilePath.Trim(), buildUnminified, buildMinified, tailwindOutputPath, buildTailwind));
+                    entries.Add((candidate.TypeName, candidate.OutputPath, candidate.BuildUnminified, candidate.BuildMinified,
+                        candidate.TailwindOutputPath, candidate.BuildTailwind));
                 }
 
                 EmitManifest(spc, entries);
             });
+        }
+
+        private static Candidate GetCandidate(GeneratorAttributeSyntaxContext context)
+        {
+            var type = (INamedTypeSymbol)context.TargetSymbol;
+            AttributeData attribute = context.Attributes[0];
+            Compilation compilation = context.SemanticModel.Compilation;
+            INamedTypeSymbol? themeType = compilation.GetTypeByMetadataName("Soenneker.Quark.Theme");
+            string? path = GetOutputFilePath(attribute);
+            CandidateError error = themeType is null ? CandidateError.MissingThemeType :
+                string.IsNullOrWhiteSpace(path) ? CandidateError.MissingOutputPath :
+                !TryGetThemeFactoryMember(type, themeType, compilation.GetTypeByMetadataName("System.IServiceProvider")) ?
+                    CandidateError.MissingFactory : CandidateError.None;
+            (bool unminified, bool minified) = GetBuildUnminifiedAndMinified(attribute);
+            (string tailwindPath, bool tailwind) = GetTailwindOptions(attribute);
+            return new Candidate(GetFullyQualifiedName(type), type.Name, path?.Trim() ?? string.Empty,
+                unminified, minified, tailwindPath, tailwind, error, error == CandidateError.None ? null : type.Locations.FirstOrDefault());
         }
 
         private static IEnumerable<Candidate> MergeCandidates(
@@ -136,7 +134,7 @@ namespace Soenneker.Quark.Gen.Themes
             if (suiteCandidates.IsDefaultOrEmpty && generatorCandidates.IsDefaultOrEmpty)
                 return Array.Empty<Candidate>();
 
-            var seen = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+            var seen = new HashSet<string>(StringComparer.Ordinal);
             var merged = new List<Candidate>(suiteCandidates.Length + generatorCandidates.Length);
 
             AddCandidates(suiteCandidates, merged, seen);
@@ -148,14 +146,14 @@ namespace Soenneker.Quark.Gen.Themes
         private static void AddCandidates(
             ImmutableArray<Candidate> candidates,
             List<Candidate> merged,
-            HashSet<INamedTypeSymbol> seen)
+            HashSet<string> seen)
         {
             if (candidates.IsDefaultOrEmpty)
                 return;
 
             foreach (Candidate candidate in candidates)
             {
-                if (seen.Add(candidate.ClassSymbol))
+                if (seen.Add(candidate.TypeName))
                     merged.Add(candidate);
             }
         }
