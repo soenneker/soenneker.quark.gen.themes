@@ -14,7 +14,7 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.12" />
         <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.12" />
         <PackageReference Include="Soenneker.Css.Minify" Version="4.0.143" />
-        <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.949" />
+        <PackageReference Include="Soenneker.Utils.Directory" Version="4.0.951" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="Soenneker.Extensions.ValueTask" Version="4.0.125" />
