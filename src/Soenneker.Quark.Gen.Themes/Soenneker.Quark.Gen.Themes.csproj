@@ -41,6 +41,7 @@
         <_QuarkThemeBuildTasksProjectPath>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '..', 'Soenneker.Quark.Gen.Themes.BuildTasks', 'Soenneker.Quark.Gen.Themes.BuildTasks.csproj'))))</_QuarkThemeBuildTasksProjectPath>
         <_QuarkThemeBuildTasksOutputDir>$([System.IO.Path]::GetFullPath($([System.IO.Path]::Combine('$(MSBuildProjectDirectory)', '..', 'Soenneker.Quark.Gen.Themes.BuildTasks', 'bin', '$(Configuration)'))))</_QuarkThemeBuildTasksOutputDir>
         <_QuarkThemeBuildTasksDllPath>$([System.IO.Path]::Combine('$(_QuarkThemeBuildTasksOutputDir)', 'Soenneker.Quark.Gen.Themes.BuildTasks.dll'))</_QuarkThemeBuildTasksDllPath>
+        <PackageReleaseNotes Condition="'$(PACKAGE_RELEASE_NOTES)' != ''">$(PACKAGE_RELEASE_NOTES)</PackageReleaseNotes>
     </PropertyGroup>
 
     <ItemGroup>
