@@ -167,7 +167,7 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
                     if (buildMinified)
                     {
                         _logger.LogInformation("Writing minified theme CSS for {ThemeTypeName} to {OutputPath}.", entry.ThemeTypeName, minifiedPath);
-                        string minifiedCss = _cssMinifier.Minify(componentCss);
+                        string minifiedCss = await _cssMinifier.Minify(componentCss, cancellationToken).NoSync();
                         await AtomicWriteUtf8NoBom(minifiedPath, minifiedCss, cancellationToken).NoSync();
                     }
                 }
