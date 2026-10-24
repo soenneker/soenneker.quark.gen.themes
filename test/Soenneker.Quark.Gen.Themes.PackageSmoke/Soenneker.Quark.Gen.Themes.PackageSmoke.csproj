@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <ThemePackageVersion Condition="'$(BUILD_VERSION)' == ''">1.0.0</ThemePackageVersion>
+    <ThemePackageVersion Condition="'$(BUILD_VERSION)' != ''">$(BUILD_VERSION)</ThemePackageVersion>
+    <RestoreAdditionalProjectSources>$(MSBuildThisFileDirectory)../../artifacts;$(RestoreAdditionalProjectSources)</RestoreAdditionalProjectSources>
+  </PropertyGroup>
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Soenneker.Quark.Gen.Themes" Version="$(ThemePackageVersion)" />
+    <PackageReference Include="Soenneker.Quark.Suite" Version="4.0.1607" />
+    <PackageReference Include="Soenneker.Lepton.Suite" Version="4.0.126" />
+  </ItemGroup>
+  <Target Name="VerifyThemeOutput" AfterTargets="Build">
+    <Error Condition="!Exists('wwwroot/css/theme.css')" Text="Clean build did not generate theme CSS." />
+    <Error Condition="!Exists('wwwroot/css/theme.min.css')" Text="Clean build did not generate minified theme CSS." />
+    <Error Condition="!Exists('tailwind/quark-theme.generated.css')" Text="Clean build did not generate theme tokens." />
+  </Target>
+</Project>

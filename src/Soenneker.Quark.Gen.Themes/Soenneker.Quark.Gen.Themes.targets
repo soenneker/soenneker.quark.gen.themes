@@ -23,8 +23,10 @@
         <_QuarkThemeGeneratorStamp>$([System.IO.Path]::Combine('$(MSBuildProjectExtensionsPath)', '$(Configuration)', '$(TargetFramework)', 'quark-theme-generator.stamp'))</_QuarkThemeGeneratorStamp>
     </PropertyGroup>
 
+    <!-- Theme reflection needs the current assembly and its copied dependencies, which are not
+         available after CoreCompile on a clean build or during a compile-only generator pass. -->
     <Target Name="WriteQuarkThemeCss"
-            AfterTargets="CoreCompile"
+            AfterTargets="CopyFilesToOutputDirectory"
             BeforeTargets="RunTailwindGeneratorBuildTasks;Build"
             Inputs="$(TargetPath);$(MSBuildProjectFullPath);$(QuarkThemeBuildTasksDllPath)"
             Outputs="$(_QuarkThemeGeneratorStamp)"

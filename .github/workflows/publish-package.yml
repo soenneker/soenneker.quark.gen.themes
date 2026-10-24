@@ -73,6 +73,9 @@ jobs:
             --no-restore \
             --output ./artifacts
 
+      - name: Verify clean packaged Razor consumer
+        run: dotnet build test/Soenneker.Quark.Gen.Themes.PackageSmoke -c Release
+
       - name: Publish to NuGet
         uses: soenneker/nuget-resilient-publish@v4
         with:
