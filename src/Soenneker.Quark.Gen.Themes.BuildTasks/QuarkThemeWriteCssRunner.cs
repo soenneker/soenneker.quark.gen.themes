@@ -541,10 +541,6 @@ public class QuarkThemeWriteCssRunner : IQuarkThemeWriteCssRunner
                 return;
         }
 
-        string tmp = path + ".tmp";
-        await _fileUtil.Write(tmp, content, log: false, cancellationToken).NoSync();
-
-        await _fileUtil.Move(tmp, path, cancellationToken: cancellationToken)
-                       .NoSync();
+        await _fileUtil.WriteAtomically(path, content, log: false, cancellationToken).NoSync();
     }
 }
