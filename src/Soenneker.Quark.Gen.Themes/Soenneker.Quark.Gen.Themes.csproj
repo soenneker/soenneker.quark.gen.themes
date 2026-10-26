@@ -13,7 +13,7 @@
 
     <PropertyGroup>
         <Description>A source generator for generating Quark css files at compile time</Description>
-        <Version Condition="'$(BUILD_VERSION)' == ''">4.0.0</Version>
+        <Version Condition="'$(BUILD_VERSION)' == ''">11.0.0</Version>
         <Version Condition="'$(BUILD_VERSION)' != ''">$(BUILD_VERSION)</Version>
         <AssemblyName>Soenneker.Quark.Gen.Themes</AssemblyName>
         <PackageId>Soenneker.Quark.Gen.Themes</PackageId>
@@ -71,7 +71,7 @@
         <Error Condition="!Exists('$(_QuarkThemeBuildTasksDllPath)')" Text="BuildTasks output missing. Aborting pack to avoid publishing a broken package." />
         <ItemGroup>
             <None Include="$(_QuarkThemeBuildTasksOutputDir)\*.*" Pack="true" PackagePath="buildTransitive/" />
-            <None Include="$(_QuarkThemeBuildTasksOutputDir)\runtimes\win\lib\net10.0\*.*" Pack="true" PackagePath="buildTransitive/runtimes/win/lib/net10.0/" Condition="Exists('$(_QuarkThemeBuildTasksOutputDir)\runtimes\win\lib\net10.0')" />
+            <None Include="$(_QuarkThemeBuildTasksOutputDir)\runtimes\win\lib\net11.0\*.*" Pack="true" PackagePath="buildTransitive/runtimes/win/lib/net11.0/" Condition="Exists('$(_QuarkThemeBuildTasksOutputDir)\runtimes\win\lib\net11.0')" />
         </ItemGroup>
     </Target>
 </Project>

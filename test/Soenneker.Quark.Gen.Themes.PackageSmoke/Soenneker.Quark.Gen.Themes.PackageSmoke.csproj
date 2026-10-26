@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk.Razor">
   <PropertyGroup>
-    <TargetFramework>net10.0</TargetFramework>
+    <TargetFramework>net11.0</TargetFramework>
     <OutputType>Exe</OutputType>
     <IsPackable>false</IsPackable>
     <ThemePackageVersion Condition="'$(BUILD_VERSION)' == ''">1.0.0</ThemePackageVersion>
@@ -10,8 +10,8 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Soenneker.Quark.Gen.Themes" Version="$(ThemePackageVersion)" />
-    <PackageReference Include="Soenneker.Quark.Suite" Version="4.0.1610" />
-    <PackageReference Include="Soenneker.Lepton.Suite" Version="4.0.128" />
+    <PackageReference Include="Soenneker.Quark.Suite" Version="11.0.1611" />
+    <PackageReference Include="Soenneker.Lepton.Suite" Version="11.0.130" />
   </ItemGroup>
   <Target Name="VerifyThemeOutput" AfterTargets="Build">
     <Error Condition="!Exists('wwwroot/css/theme.css')" Text="Clean build did not generate theme CSS." />
