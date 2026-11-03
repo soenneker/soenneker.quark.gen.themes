@@ -20,7 +20,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\..\src\Soenneker.Quark.Gen.Themes\Soenneker.Quark.Gen.Themes.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-        <PackageReference Include="Soenneker.Quark.Suite" Version="11.0.1666" />
+        <PackageReference Include="Soenneker.Quark.Suite" Version="11.0.1667" />
     </ItemGroup>
     <ItemGroup>
     </ItemGroup>
