@@ -10,7 +10,7 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Soenneker.Quark.Gen.Themes" Version="$(ThemePackageVersion)" />
-    <PackageReference Include="Soenneker.Quark.Suite" Version="11.0.1695" />
+    <PackageReference Include="Soenneker.Quark.Suite" Version="11.0.1696" />
   </ItemGroup>
   <Target Name="VerifyThemeOutput" AfterTargets="Build">
     <Error Condition="!Exists('wwwroot/css/theme.css')" Text="Clean build did not generate theme CSS." />
