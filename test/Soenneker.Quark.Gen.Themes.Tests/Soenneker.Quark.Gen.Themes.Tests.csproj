@@ -18,9 +18,9 @@
 
     <ItemGroup>
         <PackageReference Include="Soenneker.Utils.Test" Version="11.0.347" />
-        <PackageReference Include="Soenneker.Tests.HostedUnit" Version="11.0.377" />
+        <PackageReference Include="Soenneker.Tests.HostedUnit" Version="11.0.379" />
         <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="5.12.0" PrivateAssets="all" />
-        <PackageReference Include="TUnit" Version="1.85.7" />
+        <PackageReference Include="TUnit" Version="1.86.0" />
     </ItemGroup>
 
     <ItemGroup>
